@@ -1,0 +1,767 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ product.name }} - TechMart{% endblock %}
+
+{% block content %}
+<section class="product-detail-section" style="padding: 60px 0; background-color: #f5f7fa;">
+    <div class="container">
+        <div class="row">
+            <!-- Hình ảnh sản phẩm -->
+            <div class="col-md-6">
+                <div class="product-image">
+                    {% if product.image %}
+                    <img src="{{ product.image }}" alt="{{ product.name }}" class="img-fluid product-detail-image" style="max-height: 400px; object-fit: contain;" data-default="{{ url_for('static', filename='img/default-product.jpg') }}">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='img/default-product.jpg') }}" alt="{{ product.name }}" class="img-fluid product-detail-image" style="max-height: 400px; object-fit: contain;" data-default="{{ url_for('static', filename='img/default-product.jpg') }}">
+                    {% endif %}
+                </div>
+            </div>
+            <!-- Thông tin sản phẩm -->
+            <div class="col-md-6">
+                <h1 style="font-size: 2rem; font-weight: bold; color: #333;">{{ product.name }}</h1>
+                <p style="font-size: 1.2rem; color: #d0021b; font-weight: bold;">
+                    Giá: {{ '{:,.0f}'.format(product.price|float) }} đ
+                </p>
+                {% if product.discounted_price %}
+                <p style="font-size: 1rem; color: #888; text-decoration: line-through;">
+                    Giá gốc: {{ '{:,.0f}'.format(product.price|float) }} đ
+                </p>
+                <p style="font-size: 1.2rem; color: #d0021b; font-weight: bold;">
+                    Giá giảm: {{ '{:,.0f}'.format(product.discounted_price|float) }} đ
+                </p>
+                {% endif %}
+                <p style="font-size: 1rem; color: #666;">Danh mục: {{ product.category.name }}</p>
+                <p style="font-size: 1rem; color: #666;">Nhà sản xuất: {{ product.manufacturer }}</p>
+                <p style="font-size: 1rem; color: #666;">Mô tả: {{ product.description }}</p>
+                <p style="font-size: 1rem; color: #666;">Tồn kho: {{ product.stock }}</p>
+                <p style="font-size: 1rem; color: #666;">
+                    Đánh giá:
+                    <div class="star-rating">
+                        {% set rating = product.rating | float | default(5) %}
+                        {% set full_stars = rating | round(0, 'floor') | int %}
+                        {% for i in range(5) %}
+                            <span class="star {% if i < full_stars %}filled{% else %}empty{% endif %}">★</span>
+                        {% endfor %}
+                    </div>
+                </p>
+                <div class="btn-group mt-3">
+                    <a href="{{ url_for('cart.add_to_cart', product_id=product.id) }}" class="btn btn-primary">Thêm vào giỏ hàng</a>
+                    <a href="{{ url_for('cart.buy_now', product_id=product.id) }}" class="btn btn-success">Mua ngay</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phần đánh giá sản phẩm -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="rating-section">
+                    <!-- Tổng quan đánh giá -->
+                    <div class="overall-rating mb-4">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div class="star-rating">
+                                {% set rating = product.rating | float | default(5) %}
+                                {% set full_stars = rating | round(0, 'floor') | int %}
+                                {% for i in range(5) %}
+                                    <span class="star {% if i < full_stars %}filled{% else %}empty{% endif %}">★</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nút mở form đánh giá -->
+                    <div class="rating-prompt mb-4">
+                        <h3 style="font-size: 1.2rem; font-weight: bold; color: #333;">Bạn đánh giá sao về sản phẩm này?</h3>
+                        <button type="button" class="btn btn-danger mt-2" id="open-rating-form" style="background-color: #d0021b; border: none;">Đánh giá ngay</button>
+                    </div>
+
+                    <!-- Form đánh giá (ẩn ban đầu) -->
+                    <div class="rating-form mt-3" id="rating-form" style="display: none;">
+                        <form method="POST" action="{{ url_for('products.product_detail', product_id=product.id) }}" id="rating-form-submit">
+                            <div class="form-group">
+                                <label for="rating" style="font-size: 1rem; color: #333;">Đánh giá tổng quan:</label>
+                                <div class="star-rating overall-rating" style="display: inline-block; margin-left: 10px;">
+                                    <input type="hidden" name="rating" id="rating" value="0">
+                                    <span class="star interactive-star" data-value="1">★</span>
+                                    <span class="star interactive-star" data-value="2">★</span>
+                                    <span class="star interactive-star" data-value="3">★</span>
+                                    <span class="star interactive-star" data-value="4">★</span>
+                                    <span class="star interactive-star" data-value="5">★</span>
+                                </div>
+                            </div>
+                            <!-- Đánh giá theo tiêu chí -->
+                            <div class="criteria-form mt-3">
+                                <label style="font-size: 1rem; color: #333;">Đánh giá chi tiết:</label>
+                                {% for criterion in ['Hiệu năng', 'Thời lượng pin', 'Chất lượng camera'] %}
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                    <span style="font-size: 1rem; color: #666; width: 150px;">{{ criterion }}</span>
+                                    <div class="star-rating criterion-rating" data-criterion="{{ criterion | lower | replace(' ', '-') }}">
+                                        <input type="hidden" name="criteria_{{ criterion | lower | replace(' ', '-') }}" value="0">
+                                        <span class="star interactive-star" data-value="1">★</span>
+                                        <span class="star interactive-star" data-value="2">★</span>
+                                        <span class="star interactive-star" data-value="3">★</span>
+                                        <span class="star interactive-star" data-value="4">★</span>
+                                        <span class="star interactive-star" data-value="5">★</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="form-group">
+                                <textarea name="content" class="form-control" rows="3" placeholder="Viết đánh giá của bạn..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Gửi đánh giá</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bình luận (Trò chuyện) -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <h2 style="text-align: center; font-size: 2rem; font-weight: bold; margin-bottom: 40px; color: #333;">
+                    Bình luận ({{ comments | length }})
+                </h2>
+
+                {% if comments %}
+                <div class="comments-list">
+                    {% for comment in comments %}
+                    <div class="comment mb-3 p-3">
+                        <div class="comment-meta">
+                            <strong>{{ comment.user.username }}</strong> - {{ comment.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                            {% if comment.score %}
+                            <div class="star-rating mb-2">
+                                {% for i in range(comment.score | int) %}
+                                    <span class="star filled">★</span>
+                                {% endfor %}
+                                {% for i in range(5 - (comment.score | int)) %}
+                                    <span class="star empty">★</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% if comment.criteria %}
+                        <div class="criteria-details mb-2">
+                            {% for criterion, score in comment.criteria.items() %}
+                            <p style="font-size: 0.95rem; color: #666; margin: 0;">
+                                {{ criterion }}:
+                                {% for i in range(score | int) %}
+                                    <span class="star filled">★</span>
+                                {% endfor %}
+                                {% for i in range(5 - (score | int)) %}
+                                    <span class="star empty">★</span>
+                                {% endfor %}
+                            </p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <p>{{ comment.content }}</p>
+                        <!-- Thả cảm xúc -->
+                        <div class="reaction-container" data-comment-id="{{ comment.id }}">
+                            <button class="like-button" data-comment-id="{{ comment.id }}">
+                                {% set user_reaction = comment.reactions | selectattr('user_id', 'equalto', current_user.id) | first %}
+                                {% if user_reaction %}
+                                {{ user_reaction.emoji }} ({{ (comment.reactions | groupby('emoji') | selectattr('grouper', 'equalto', user_reaction.emoji) | first).list | length if (comment.reactions | groupby('emoji') | selectattr('grouper', 'equalto', user_reaction.emoji) | first) else 0 }})
+                                {% else %}
+                                Thích
+                                {% endif %}
+                            </button>
+                            <div class="reaction-icons d-none" data-comment-id="{{ comment.id }}">
+                                <button class="icon emoji-btn" data-emoji="👍">👍</button>
+                                <button class="icon emoji-btn" data-emoji="❤️">❤️</button>
+                                <button class="icon emoji-btn" data-emoji="😂">😂</button>
+                                <button class="icon emoji-btn" data-emoji="😢">😢</button>
+                                <button class="icon emoji-btn" data-emoji="😍">😍</button>
+                                <button class="icon emoji-btn" data-emoji="👏">👏</button>
+                            </div>
+                            <div class="reaction-summary" data-comment-id="{{ comment.id }}">
+                                {% set total_reactions = comment.reactions | length %}
+                                {% if total_reactions > 0 %}
+                                <span class="reaction-total">{{ total_reactions }} phản hồi</span>
+                                <div class="reaction-details d-none">
+                                    {% set reactions = comment.reactions | groupby('emoji') %}
+                                    {% for emoji, reaction_list in reactions %}
+                                    <span class="summary-emoji reaction-count" title="{{ emoji }} ({{ reaction_list | length }})">{{ emoji }} {{ reaction_list | length }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <!-- Nút trả lời -->
+                        <button class="reply-button" data-comment-id="{{ comment.id }}">Trả lời</button>
+                        <!-- Form trả lời -->
+                        <form method="POST" action="{{ url_for('products.product_detail', product_id=product.id) }}" class="reply-form mt-2 d-none" data-comment-id="{{ comment.id }}" id="reply-form-{{ comment.id }}">
+                            <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                            <div class="form-group">
+                                <textarea name="content" class="form-control" rows="2" placeholder="Viết câu trả lời của bạn..." required></textarea>
+                            </div>
+                            <div class="reply-form-actions">
+                                <button type="submit" class="btn btn-primary btn-sm">Gửi</button>
+                                <button type="button" class="btn btn-secondary btn-sm cancel-reply">Hủy</button>
+                            </div>
+                        </form>
+                        <!-- Hiển thị các câu trả lời -->
+                        {% if comment.replies %}
+                        <div class="replies mt-3">
+                            {% for reply in comment.replies | sort(attribute='timestamp') %}
+                            <div class="reply mb-2 p-2">
+                                <div class="comment-meta">
+                                    <strong>{{ reply.user.username }}</strong> - {{ reply.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                                </div>
+                                <p>{{ reply.content }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-center">Chưa có bình luận nào.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sản phẩm liên quan -->
+        <div class="row mt-5 related-products">
+            <h2 style="text-align: center; font-size: 2rem; font-weight: bold; margin-bottom: 40px; color: #333;">Sản phẩm liên quan</h2>
+            <div class="col-12">
+                <div class="related-products-list">
+                    {% if related_products %}
+                    {% for related in related_products %}
+                    <div class="related-product-item">
+                        <a href="{{ url_for('products.product_detail', product_id=related.id) }}" class="product-card-link">
+                            {% if related.image %}
+                            <img src="{{ related.image }}" class="card-img-top product-img" alt="{{ related.name }}" data-default="{{ url_for('static', filename='img/default-product.jpg') }}" style="height: 200px; object-fit: contain; padding: 10px;">
+                            {% else %}
+                            <img src="{{ url_for('static', filename='img/default-product.jpg') }}" class="card-img-top product-img" alt="{{ related.name }}" data-default="{{ url_for('static', filename='img/default-product.jpg') }}" style="height: 200px; object-fit: contain; padding: 10px;">
+                            {% endif %}
+                            <div class="text-center">
+                                <h5 style="font-weight: 600; color: #333; min-height: 48px;">{{ related.name }}</h5>
+                                <p class="product-price">
+                                    {{ '{:,.0f}'.format(related.price|float) }} đ
+                                </p>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-center">Không có sản phẩm liên quan.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .product-image img {
+        width: 100%;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .product-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+
+    .product-price {
+        font-size: 18px;
+        font-weight: bold;
+        color: #d0021b;
+        margin-bottom: 5px;
+    }
+
+    .star-rating {
+        font-size: 24px;
+    }
+
+    .star {
+        font-size: 24px !important;
+        color: #d3d3d3 !important; /* Màu mặc định cho sao chưa chọn */
+    }
+
+    .star.filled {
+        color: #f5c518 !important;
+    }
+
+    .star.empty {
+        color: #d3d3d3 !important;
+    }
+
+    /* Thêm kiểu cho các ngôi sao tương tác */
+    .star.interactive-star {
+        cursor: pointer !important;
+        pointer-events: auto !important;
+        transition: color 0.2s ease;
+        color: #d3d3d3 !important; /* Đảm bảo sao tương tác bắt đầu với màu xám */
+    }
+
+    .star.interactive-star.active {
+        color: #f5c518 !important;
+    }
+
+    .rating-section {
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .rating-form .form-control {
+        width: 100%;
+        height: 100px;
+        padding: 15px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+        background: #f9f9f9;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .rating-form .form-control:focus {
+        border-color: #6b48ff;
+        box-shadow: 0 0 8px rgba(107, 72, 255, 0.2);
+        outline: none;
+    }
+
+    .comments-list .comment {
+        position: relative;
+        background: #f9f9f9;
+        transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    .comment-meta {
+        font-size: 0.95rem;
+        color: #666;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .comment-meta strong {
+        color: #333;
+        font-weight: 600;
+    }
+
+    .comment p {
+        font-size: 1.1rem;
+        color: #444;
+        margin-bottom: 15px;
+    }
+
+    .reaction-container {
+        position: relative;
+        margin-top: 5px;
+        display: inline-block;
+        padding: 5px;
+    }
+
+    .like-button {
+        padding: 5px 10px;
+        background-color: transparent;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #606770;
+        transition: color 0.2s;
+        pointer-events: auto;
+    }
+
+    .like-button:hover {
+        color: #1877F2;
+    }
+
+    .reaction-icons {
+        display: none;
+        position: absolute;
+        top: -45px;
+        left: 0;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 25px;
+        padding: 8px 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        gap: 5px;
+        z-index: 10;
+        opacity: 0;
+        visibility: hidden;
+        transform: scale(0.95);
+        transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s ease;
+    }
+
+    .reaction-container:hover .reaction-icons,
+    .reaction-icons:hover {
+        display: flex;
+        opacity: 1;
+        visibility: visible;
+        transform: scale(1);
+    }
+
+    .reaction-icons .icon {
+        cursor: pointer;
+        font-size: 24px;
+        transition: transform 0.2s ease;
+    }
+
+    .reaction-icons .icon:hover {
+        transform: scale(1.3) translateY(-5px);
+    }
+
+    .reaction-summary {
+        display: inline-block;
+        margin-left: 10px;
+    }
+
+    .summary-emoji {
+        font-size: 14px;
+        margin-right: 5px;
+    }
+
+    .reply-button {
+        background: none;
+        border: none;
+        color: #6b48ff;
+        font-size: 0.95rem;
+        cursor: pointer;
+        padding: 5px 10px;
+        transition: color 0.3s ease;
+        pointer-events: auto;
+    }
+
+    .reply-button:hover {
+        color: #ff6b6b;
+        text-decoration: underline;
+    }
+
+    .reply-form {
+        background: #f5f5f5;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 15px;
+        transition: opacity 0.3s ease;
+    }
+
+    .reply-form.d-none {
+        opacity: 0;
+        height: 0;
+        overflow: hidden;
+        margin: 0;
+    }
+
+    .replies {
+        margin-left: 30px;
+        position: relative;
+    }
+
+    .reply {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        position: relative;
+    }
+
+    .reply::before {
+        content: '↳';
+        position: absolute;
+        left: 10px;
+        top: 15px;
+        color: #6b48ff;
+        font-size: 1.2rem;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 10px;
+    }
+</style>
+
+<script>
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Xử lý lỗi tải hình ảnh
+        const productImages = document.querySelectorAll('.product-img');
+        productImages.forEach(img => {
+            img.addEventListener('error', function() {
+                this.src = this.getAttribute('data-default');
+            });
+        });
+
+        const productId = {{ product.id | int }};
+
+        // Xử lý mở/đóng form đánh giá
+        const openRatingFormBtn = document.getElementById('open-rating-form');
+        const ratingForm = document.getElementById('rating-form');
+        if (openRatingFormBtn && ratingForm) {
+            openRatingFormBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Nhấn nút "Đánh giá ngay"');
+                ratingForm.style.display = ratingForm.style.display === 'none' ? 'block' : 'none';
+                console.log('Form hiển thị:', ratingForm.style.display);
+            });
+        } else {
+            console.error('Không tìm thấy nút #open-rating-form hoặc form #rating-form');
+        }
+
+        // Xử lý đánh giá sao tổng quan
+        const stars = document.querySelectorAll('.star-rating.overall-rating .interactive-star');
+        const ratingInput = document.querySelector('#rating');
+        if (stars.length > 0 && ratingInput) {
+            // Hàm cập nhật hiển thị sao
+            const updateStars = (value) => {
+                stars.forEach(star => {
+                    const starValue = parseInt(star.getAttribute('data-value'));
+                    if (starValue <= value) {
+                        star.classList.add('active');
+                    } else {
+                        star.classList.remove('active');
+                    }
+                });
+                console.log('Cập nhật sao tổng quan:', value);
+            };
+
+            // Khởi tạo trạng thái ban đầu: 0 sao (chưa đánh giá)
+            ratingInput.value = 0;
+            updateStars(0);
+
+            stars.forEach(star => {
+                star.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation(); // Ngăn chặn sự kiện lan truyền
+                    const value = parseInt(this.getAttribute('data-value'));
+                    ratingInput.value = value;
+                    updateStars(value);
+                    console.log('Đã chọn đánh giá tổng quan:', value);
+                });
+
+                star.addEventListener('mouseover', function() {
+                    const value = parseInt(this.getAttribute('data-value'));
+                    stars.forEach(s => {
+                        const sValue = parseInt(s.getAttribute('data-value'));
+                        if (sValue <= value) {
+                            s.classList.add('active');
+                        } else {
+                            s.classList.remove('active');
+                        }
+                    });
+                    console.log('Di chuột qua sao:', value);
+                });
+
+                star.addEventListener('mouseout', function() {
+                    const currentValue = parseInt(ratingInput.value) || 0;
+                    updateStars(currentValue);
+                    console.log('Rời chuột, giá trị hiện tại:', currentValue);
+                });
+            });
+        } else {
+            console.error('Không tìm thấy sao hoặc input đánh giá tổng quan');
+        }
+
+        // Xử lý đánh giá sao theo tiêu chí
+        const criteriaStars = document.querySelectorAll('.criterion-rating .interactive-star');
+        if (criteriaStars.length > 0) {
+            criteriaStars.forEach(star => {
+                const criterionDiv = star.closest('.criterion-rating');
+                const criterionInput = criterionDiv.querySelector('input');
+                const criterionStars = criterionDiv.querySelectorAll('.interactive-star');
+
+                // Hàm cập nhật sao cho tiêu chí
+                const updateCriterionStars = (value) => {
+                    criterionStars.forEach(s => {
+                        const sValue = parseInt(s.getAttribute('data-value'));
+                        if (sValue <= value) {
+                            s.classList.add('active');
+                        } else {
+                            s.classList.remove('active');
+                        }
+                    });
+                    console.log(`Cập nhật sao ${criterionDiv.getAttribute('data-criterion')}:`, value);
+                };
+
+                // Khởi tạo trạng thái ban đầu cho tiêu chí: 0 sao
+                criterionInput.value = 0;
+                updateCriterionStars(0);
+
+                star.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation(); // Ngăn chặn sự kiện lan truyền
+                    const value = parseInt(this.getAttribute('data-value'));
+                    criterionInput.value = value;
+                    updateCriterionStars(value);
+                    console.log(`Đã chọn đánh giá ${criterionDiv.getAttribute('data-criterion')}:`, value);
+                });
+
+                star.addEventListener('mouseover', function() {
+                    const value = parseInt(this.getAttribute('data-value'));
+                    criterionStars.forEach(s => {
+                        const sValue = parseInt(s.getAttribute('data-value'));
+                        if (sValue <= value) {
+                            s.classList.add('active');
+                        } else {
+                            s.classList.remove('active');
+                        }
+                    });
+                    console.log(`Di chuột qua sao ${criterionDiv.getAttribute('data-criterion')}:`, value);
+                });
+
+                star.addEventListener('mouseout', function() {
+                    const currentValue = parseInt(criterionInput.value) || 0;
+                    updateCriterionStars(currentValue);
+                    console.log(`Rời chuột ${criterionDiv.getAttribute('data-criterion')}, giá trị hiện tại:`, currentValue);
+                });
+            });
+        } else {
+            console.error('Không tìm thấy sao tiêu chí');
+        }
+
+        // Debug form gửi đánh giá
+        const ratingFormSubmit = document.querySelector('#rating-form-submit');
+        if (ratingFormSubmit) {
+            ratingFormSubmit.addEventListener('submit', function(e) {
+                const formData = new FormData(this);
+                const rating = formData.get('rating');
+                const content = formData.get('content');
+                console.log(`Gửi form đánh giá - rating: ${rating}, content: ${content}`);
+                for (let [key, value] of formData.entries()) {
+                    console.log(`Form data - ${key}: ${value}`);
+                }
+            });
+        }
+
+        // Xử lý thả cảm xúc
+        console.log('Khởi tạo nút cảm xúc...');
+        const likeButtons = document.querySelectorAll('.like-button');
+        console.log('Tìm thấy nút thích:', likeButtons.length);
+        if (likeButtons.length > 0) {
+            likeButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Nhấn nút thích');
+                    const commentId = this.getAttribute('data-comment-id');
+                    console.log('ID bình luận:', commentId);
+                    const picker = document.querySelector(`.reaction-icons[data-comment-id="${commentId}"]`);
+                    if (picker) {
+                        picker.classList.toggle('d-none');
+                        console.log('Hiển thị picker:', picker.classList.contains('d-none') ? 'Ẩn' : 'Hiện');
+                    } else {
+                        console.error('Không tìm thấy picker cho ID bình luận:', commentId);
+                    }
+                });
+            });
+        } else {
+            console.error('Không tìm thấy nút thích trên trang');
+        }
+
+        const emojiButtons = document.querySelectorAll('.emoji-btn');
+        console.log('Tìm thấy nút emoji:', emojiButtons.length);
+        if (emojiButtons.length > 0) {
+            emojiButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    console.log('Nhấn nút emoji');
+                    const emoji = this.getAttribute('data-emoji');
+                    const commentId = this.parentElement.getAttribute('data-comment-id');
+                    console.log('Emoji:', emoji, 'ID bình luận:', commentId);
+                    const wrapper = document.querySelector(`.reaction-summary[data-comment-id="${commentId}"]`);
+                    const likeButton = document.querySelector(`.like-button[data-comment-id="${commentId}"]`);
+
+                    if (!wrapper || !likeButton) {
+                        console.error('Không tìm thấy wrapper hoặc nút thích cho ID bình luận:', commentId);
+                        return;
+                    }
+
+                    fetch(`/products/${productId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `emoji=${encodeURIComponent(emoji)}&comment_id=${encodeURIComponent(commentId)}`
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Phản hồi mạng không ổn');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Phản hồi fetch:', data);
+                        if (data.success) {
+                            if (data.action === 'added') {
+                            likeButton.innerText = `${emoji} (${data.count})`;
+                            } else {
+                                likeButton.innerText = `Thích`;
+                            }
+
+                            const totalReactions = Object.values(data.reaction_summary).reduce((a, b) => a + b, 0);
+                            let summaryHTML = '';
+                            if (totalReactions > 0) {
+                                summaryHTML = `
+                                    <span class="reaction-total">${totalReactions} phản hồi</span>
+                                    <div class="reaction-details d-none">
+                                        ${Object.entries(data.reaction_summary).map(([emoji, count]) =>
+                                            `<span class="summary-emoji reaction-count" title="${emoji} (${count})">${emoji} ${count}</span>`
+                                        ).join('')}
+                                    </div>
+                                `;
+                            }
+                            wrapper.innerHTML = summaryHTML;
+                        } else {
+                            console.error('Cập nhật cảm xúc thất bại:', data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Lỗi khi cập nhật cảm xúc:', error);
+                    });
+                });
+            });
+        } else {
+            console.error('Không tìm thấy nút emoji trên trang');
+        }
+
+        // Xử lý nút Trả lời
+        const replyButtons = document.querySelectorAll('.reply-button');
+        if (replyButtons.length > 0) {
+            replyButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const commentId = this.getAttribute('data-comment-id');
+                    const replyForm = document.querySelector(`.reply-form[data-comment-id="${commentId}"]`);
+                    replyForm.classList.toggle('d-none');
+                    if (!replyForm.classList.contains('d-none')) {
+                        replyForm.querySelector('textarea').focus();
+                    }
+                });
+            });
+        }
+
+        // Xử lý nút Hủy
+        const cancelButtons = document.querySelectorAll('.cancel-reply');
+        if (cancelButtons.length > 0) {
+            cancelButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const replyForm = this.closest('.reply-form');
+                    replyForm.classList.add('d-none');
+                    replyForm.querySelector('textarea').value = '';
+                });
+            });
+        }
+
+        // Debug form gửi trả lời
+        const replyForms = document.querySelectorAll('.reply-form');
+        if (replyForms.length > 0) {
+            replyForms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    const formData = new FormData(this);
+                    const parentId = formData.get('parent_id');
+                    const content = formData.get('content');
+                    console.log(`Gửi form trả lời - parent_id: ${parentId}, content: ${content}`);
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

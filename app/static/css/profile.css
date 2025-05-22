@@ -1,0 +1,318 @@
+/* Container chính */
+.container {
+    max-width: 1200px; /* Đảm bảo vừa với website */
+    margin: 0 auto;
+    padding: 2rem 0;
+    background: transparent; /* Loại bỏ nền trắng để không xung đột với File 1 */
+}
+
+/* Căn giữa và đổi màu chữ "Thông tin tài khoản" */
+.profile-container > h1 {
+    text-align: center;
+    color: #333; /* Màu chữ đen giống hình */
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 30px;
+}
+
+/* Sắp xếp giao diện nằm ngang */
+.profile-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center; /* Căn giữa các section */
+}
+
+/* Cột bên trái (Thông tin cá nhân và Đổi mật khẩu) */
+.account-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    flex: 1;
+    min-width: 300px;
+    max-width: 400px; /* Giới hạn chiều rộng để giống hình */
+}
+
+/* Cột bên phải (Đơn hàng gần đây và Địa chỉ giao hàng) */
+.activity-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    flex: 1;
+    min-width: 300px;
+    max-width: 400px; /* Giới hạn chiều rộng để giống hình */
+}
+
+/* Nút "Chỉnh sửa" */
+.edit-btn {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: 1px solid transparent;
+    padding: 0.5rem 0.75rem; /* Giảm padding để nhỏ hơn */
+    border-radius: 50px; /* Bo tròn giống nút "Thêm vào giỏ" */
+    cursor: pointer;
+    font-size: 0.8rem; /* Giảm kích thước chữ */
+    font-weight: 500;
+    transition: all 0.4s cubic-bezier(0.2, 1, 0.2, 1);
+    position: relative;
+    z-index: 1;
+}
+
+.edit-btn:hover {
+    background: linear-gradient(45deg, var(--primary-dark), var(--secondary-color));
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md), var(--shadow-glow);
+}
+
+.edit-btn:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    opacity: 0.9;
+}
+
+/* Nút "Xem tất cả" */
+.view-all-btn {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: 1px solid transparent;
+    padding: 0.65rem 1rem; /* Kích thước tiêu chuẩn cho nút */
+    border-radius: 50px; /* Bo tròn giống các nút khác */
+    cursor: pointer;
+    font-size: 0.9rem; /* Kích thước chữ tiêu chuẩn */
+    font-weight: 500;
+    transition: all 0.4s cubic-bezier(0.2, 1, 0.2, 1);
+    position: relative;
+    z-index: 1;
+    text-align: center; /* Đảm bảo chữ căn giữa */
+    display: inline-block; /* Đảm bảo nút không chiếm toàn bộ chiều rộng */
+}
+
+.view-all-btn:hover {
+    background: linear-gradient(45deg, var(--primary-dark), var(--secondary-color));
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md), var(--shadow-glow);
+}
+
+.view-all-btn:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    opacity: 0.9;
+}
+
+/* Thông tin người dùng */
+.user-info {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.avatar-container {
+    position: relative;
+}
+
+.avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover; /* Đảm bảo ảnh không bị bóp méo */
+    display: block;
+}
+
+.user-role {
+    position: absolute;
+    top: -10px; /* Di chuyển lên trên avatar */
+    right: 0;
+    background: #fff;
+    border-radius: 50%;
+    padding: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.role-badge {
+    background: var(--primary-color);
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.info-details {
+    flex: 1;
+}
+
+.info-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 10px;
+}
+
+.info-group {
+    flex: 1;
+    min-width: 150px; /* Đảm bảo không bị co quá nhỏ */
+}
+
+.info-group label {
+    display: block;
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.info-group .info-value {
+    color: #333;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.info-value.empty-value {
+    color: #999;
+    font-style: italic;
+}
+
+/* Đổi mật khẩu */
+.card-body p {
+    margin-bottom: 15px;
+    color: #666;
+}
+
+/* Đơn hàng gần đây */
+.recent-orders .empty-state {
+    text-align: center;
+    padding: 20px;
+}
+
+.empty-state img {
+    margin-bottom: 15px;
+}
+
+.empty-state p {
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.recent-orders .view-all {
+    text-align: center;
+    margin-top: 15px;
+}
+
+/* Địa chỉ giao hàng */
+.address-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.address-info {
+    flex: 1;
+}
+
+.address-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.address-phone, .address-text {
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.address-default {
+    background: var(--primary-color);
+    color: white;
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-top: 5px;
+    display: inline-block;
+}
+
+.address-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-icon {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    border: 1px solid transparent;
+    color: white;
+    padding: 0.65rem 1rem;
+    border-radius: 50px; /* Bo tròn giống nút "Thêm vào giỏ" */
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.4s cubic-bezier(0.2, 1, 0.2, 1);
+    position: relative;
+    z-index: 1;
+}
+
+.btn-icon:hover {
+    background: linear-gradient(45deg, var(--primary-dark), var(--secondary-color));
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md), var(--shadow-glow);
+}
+
+.btn-icon:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    opacity: 0.9;
+}
+
+.add-new-address {
+    text-align: center;
+}
+
+.btn-outline-primary {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    border: 1px solid transparent;
+    color: white;
+    padding: 0.65rem 1rem;
+    border-radius: 50px; /* Bo tròn giống nút "Thêm vào giỏ" */
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.4s cubic-bezier(0.2, 1, 0.2, 1);
+    position: relative;
+    z-index: 1;
+}
+
+.btn-outline-primary:hover {
+    background: linear-gradient(45deg, var(--primary-dark), var(--secondary-color));
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md), var(--shadow-glow);
+}
+
+.btn-outline-primary:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    opacity: 0.9;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .profile-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .account-info, .activity-section {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .info-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .info-group {
+        min-width: 100%;
+    }
+
+    .view-all-btn {
+        width: 100%; /* Đảm bảo nút "Xem tất cả" chiếm toàn bộ chiều rộng trên màn hình nhỏ */
+    }
+}

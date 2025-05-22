@@ -1,0 +1,331 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ title }} - TechMart{% endblock %}
+
+{% block content %}
+<section class="products-section" style="padding: 60px 0; background-color: #f5f7fa;">
+    <div class="container">
+        <h2 style="text-align: center; font-size: 2.5rem; font-weight: bold; margin-bottom: 40px; color: #333;">{{ title }}</h2>
+
+        <!-- Bộ lọc -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <form id="filter-form" method="GET" action="{{ url_for('products.all_products') }}">
+                    <div class="filter-group mb-3">
+                        <label for="search">Tìm kiếm:</label>
+                        <input type="text" name="search" id="search" class="form-control" value="{{ search_term or '' }}" placeholder="Tên sản phẩm...">
+                    </div>
+                    <div class="filter-group mb-3">
+                        <label for="category">Danh mục:</label>
+                        <select name="category" id="category" class="form-control">
+                            <option value="">Tất cả</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.slug }}" {% if current_category == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-group mb-3">
+                        <label for="manufacturer">Nhà sản xuất:</label>
+                        <select name="manufacturer" id="manufacturer" class="form-control">
+                            <option value="">Tất cả</option>
+                            {% for m in manufacturers %}
+                            <option value="{{ m }}" {% if current_manufacturer == m %}selected{% endif %}>{{ m }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-group mb-3">
+                        <label for="min_price">Giá từ:</label>
+                        <input type="number" name="min_price" id="min_price" class="form-control" value="{{ current_min_price or '' }}" placeholder="0">
+                    </div>
+                    <div class="filter-group mb-3">
+                        <label for="max_price">Giá đến:</label>
+                        <input type="number" name="max_price" id="max_price" class="form-control" value="{{ current_max_price or '' }}" placeholder="100000000">
+                    </div>
+                    <div class="filter-group mb-3">
+                        <label for="sort">Sắp xếp:</label>
+                        <select name="sort" id="sort" class="form-control">
+                            <option value="default" {% if current_sort =='default' %}selected{% endif %}>Mặc định</option>
+                            <option value="price-asc" {% if current_sort =='price-asc' %}selected{% endif %}>Giá: Thấp đến Cao</option>
+                            <option value="price-desc" {% if current_sort =='price-desc' %}selected{% endif %}>Giá: Cao đến Thấp</option>
+                            <option value="newest" {% if current_sort =='newest' %}selected{% endif %}>Mới nhất</option>
+                            <option value="rating" {% if current_sort =='rating' %}selected{% endif %}>Đánh giá cao nhất</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Lọc</button>
+                </form>
+            </div>
+            <div class="col-md-9">
+                <div class="row">
+                    {% if products.items %}
+                        {% for product in products.items %}
+                        <div class="col-md-4 col-sm-6 mb-4">
+                            <div class="card h-100" style="border: none; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: transform 0.4s ease; height: 450px; display: flex; flex-direction: column;">
+                                <!-- Nhãn giảm giá, mới, sale -->
+                                <div class="label-container">
+                                    {% if product.price is not none and product.discounted_price is not none and product.price|float > product.discounted_price|float %}
+                                    <span class="discount-label">Giảm {{ ((product.price|float - product.discounted_price|float) / product.price|float * 100)|round(0) }}%</span>
+                                    {% endif %}
+                                    {% if product.is_new %}
+                                    <span class="new-label">Mới</span>
+                                    {% endif %}
+                                    {% if product.is_sale %}
+                                    <span class="sale-label">Sale</span>
+                                    {% endif %}
+                                </div>
+                                <!-- Phần có thể click để xem chi tiết -->
+                                <a href="{{ url_for('products.product_detail', product_id=product.id) }}" class="product-card-link">
+                                    {% if product.image %}
+                                    <img src="{{ product.image }}" class="card-img-top" alt="{{ product.name }}" onerror="this.src='{{ url_for('static', filename='img/default-product.jpg') }}'">
+                                    {% else %}
+                                    <img src="{{ url_for('static', filename='img/default-product.jpg') }}" class="card-img-top" alt="{{ product.name }}">
+                                    {% endif %}
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title" style="font-weight: 600; color: #333; min-height: 48px;">{{ product.name }}</h5>
+                                        <!-- Hiển thị giá -->
+                                        {% if product.price is not none and product.discounted_price is not none and product.price|float > product.discounted_price|float %}
+                                            <div class="product-price">
+                                                <div class="original-price">{{ '{:,.0f}'.format(product.price|float) }} VNĐ</div>
+                                                <div class="discounted-price">{{ '{:,.0f}'.format(product.discounted_price|float) }} VNĐ</div>
+                                            </div>
+                                        {% elif product.price is not none and product.price|float > 0 %}
+                                            <div class="product-price">
+                                                <div class="normal-price">{{ '{:,.0f}'.format(product.price|float) }} VNĐ</div>
+                                            </div>
+                                        {% else %}
+                                            <div class="product-price">Giá không khả dụng</div>
+                                        {% endif %}
+                                    </div>
+                                </a>
+                                <!-- Phần đánh giá và yêu thích -->
+                                <div class="card-footer text-center product-meta" style="background: none; border-top: none; margin-top: auto;">
+                                    <div class="product-rating">
+                                        {% set rating = product.rating | float | default(5) %}
+                                        {% set full_stars = rating | round(0, 'floor') | int %}
+                                        {% for i in range(5) %}
+                                            <span class="star {% if i < full_stars %}filled{% else %}empty{% endif %}">★</span>
+                                        {% endfor %}
+                                    </div>
+                                    <button class="like-button {% if product.is_liked %}liked{% endif %}" data-product-id="{{ product.id }}">Yêu thích</button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="col-12">
+                            <p class="text-center">Không tìm thấy sản phẩm nào.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Phân trang -->
+                {% if products.has_prev or products.has_next %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if products.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('products.all_products', page=products.prev_num, category=current_category, manufacturer=current_manufacturer, min_price=current_min_price, max_price=current_max_price, sort=current_sort, search=search_term) }}">Trang trước</a>
+                        </li>
+                        {% endif %}
+                        {% for page in products.iter_pages() %}
+                            {% if page %}
+                                <li class="page-item {% if page == products.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('products.all_products', page=page, category=current_category, manufacturer=current_manufacturer, min_price=current_min_price, max_price=current_max_price, sort=current_sort, search=search_term) }}">{{ page }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        {% if products.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('products.all_products', page=products.next_num, category=current_category, manufacturer=current_manufacturer, min_price=current_min_price, max_price=current_max_price, sort=current_sort, search=search_term) }}">Trang sau</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Hiệu ứng nhấp nháy cho nhãn */
+    @keyframes blink {
+        0%, 100% {
+            opacity: 1;
+            filter: brightness(100%);
+        }
+        50% {
+            opacity: 0.7;
+            filter: brightness(120%);
+        }
+    }
+
+    .label-container {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        z-index: 1;
+    }
+
+    .discount-label {
+        background-color: #ff4d4d;
+        color: white;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 5px 10px;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        animation: blink 1.5s ease-in-out infinite;
+    }
+
+    .new-label {
+        background-color: #28a745;
+        color: white;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 5px 10px;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        animation: blink 1.5s ease-in-out infinite;
+    }
+
+    .sale-label {
+        background-color: #ffc107;
+        color: white;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 5px 10px;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        animation: blink 1.5s ease-in-out infinite;
+    }
+
+    .product-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        flex: 1;
+    }
+
+    .product-card-link:hover .card {
+        transform: scale(1.03);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+
+    .product-price {
+        margin-bottom: 5px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .original-price {
+        font-size: 14px;
+        color: #666;
+        text-decoration: line-through;
+    }
+
+    .normal-price {
+        font-size: 18px;
+        font-weight: bold;
+        color: #d0021b;
+    }
+
+    .discounted-price {
+        font-size: 18px;
+        font-weight: bold;
+        color: #d0021b;
+    }
+
+    .card {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card-body {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        min-height: 120px;
+    }
+
+    .card-img-top {
+        height: 200px;
+        object-fit: contain;
+        padding: 10px;
+    }
+
+    .card-title {
+        margin-bottom: 10px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .product-meta {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .product-rating {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .star {
+        font-size: 22px !important;
+        color: #f5c518 !important;
+    }
+
+    .star.filled {
+        color: #f5c518 !important;
+    }
+
+    .star.empty {
+        color: #d3d3d3 !important;
+    }
+
+    .like-button {
+        padding: 5px 10px;
+        background-color: transparent;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #606770;
+        transition: color 0.2s;
+    }
+
+    .like-button:hover {
+        color: #1877F2;
+    }
+
+    .like-button.liked {
+        color: #1877F2;
+        font-weight: 500;
+    }
+
+    .product-meta, .like-button {
+        pointer-events: auto;
+    }
+
+    .card-footer {
+        pointer-events: none;
+    }
+
+    .card-footer .product-meta {
+        pointer-events: auto;
+    }
+</style>
+{% endblock %}

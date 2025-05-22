@@ -1,0 +1,219 @@
+{% extends "layout.html" %}
+
+{% block title %}Chi tiết đơn hàng #{{ order.id }} - TechMart{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 0;">
+    <div class="page-header">
+        <h1>Chi tiết đơn hàng #{{ order.id }}</h1>
+    </div>
+
+    <div class="order-detail">
+        <!-- Order Info -->
+        <section class="order-info">
+            <h2>Thông tin đơn hàng</h2>
+
+            <div class="info-card">
+                <div class="info-row">
+                    <div class="info-group">
+                        <div class="info-label">Mã đơn hàng</div>
+                        <div class="info-value">#{{ order.id }}</div>
+                    </div>
+
+                    <div class="info-group">
+                        <div class="info-label">Ngày đặt hàng</div>
+                        <div class="info-value">{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+                    </div>
+
+                    <div class="info-group">
+                        <div class="info-label">Trạng thái</div>
+                        <div class="info-value">
+                            <span class="status-badge status-{{ order.status }}">
+                                {{ get_order_status_label(order.status) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="info-group">
+                        <div class="info-label">Tổng tiền</div>
+                        <div class="info-value info-price">{{ "{:,.0f}".format(order.total_amount) }} ₫</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Customer & Shipping Info -->
+        <section class="customer-shipping">
+            <div class="info-grid">
+                <div class="info-card">
+                    <h2>Thông tin khách hàng</h2>
+                    <div class="customer-info">
+                        <div class="info-group">
+                            <div class="info-label">Họ tên</div>
+                            <div class="info-value">{{ current_user.last_name }} {{ current_user.first_name }}</div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">Email</div>
+                            <div class="info-value">{{ current_user.email }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h2>Thông tin giao hàng</h2>
+                    <div class="shipping-info">
+                        <div class="info-group">
+                            <div class="info-label">Địa chỉ giao hàng</div>
+                            <div class="info-value">{{ order.shipping_address }}</div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">Phương thức thanh toán</div>
+                            <div class="info-value">
+                                {% if order.payment_method == 'cash' %}
+                                    Thanh toán khi nhận hàng (COD)
+                                {% elif order.payment_method == 'bank_transfer' %}
+                                    Chuyển khoản ngân hàng
+                                {% elif order.payment_method == 'credit_card' %}
+                                    Thẻ tín dụng/Ghi nợ
+                                {% else %}
+                                    {{ order.payment_method }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Order Items -->
+        <section class="order-items">
+            <h2>Sản phẩm đã đặt</h2>
+
+            <div class="items-table">
+                {% for item in order_items %}
+                <div class="product-item" style="margin-bottom: 30px;">
+                    <!-- Ảnh sản phẩm -->
+                    <div class="product-image" style="text-align: center; margin-bottom: 15px;">
+                        <img src="{{ item.product.image | default(url_for('static', filename='img/default-product.jpg')) }}" alt="{{ item.product.name }}" style="width: 120px; height: 120px; object-fit: cover;" onerror="this.src='{{ url_for('static', filename='img/default-product.jpg') }}'">
+                    </div>
+
+                    <!-- Bảng thông tin sản phẩm -->
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="border: 1px solid #ddd; padding: 8px; background-color: #f5f7fa;">Sản phẩm</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; background-color: #f5f7fa;">Đơn giá</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; background-color: #f5f7fa;">Số lượng</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; background-color: #f5f7fa;">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;">
+                                    <div class="product-details">
+                                        <div class="product-name">{{ item.product.name }}</div>
+                                        <div class="product-meta">{{ item.product.manufacturer }}</div>
+                                    </div>
+                                </td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ "{:,.0f}".format(item.price) }} ₫</td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ item.quantity }}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ "{:,.0f}".format(item.price * item.quantity) }} ₫</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                {% endfor %}
+
+                <div class="table-footer" style="margin-top: 20px;">
+                    <div class="order-summary">
+                        <div class="summary-row">
+                            <span>Tạm tính:</span>
+                            <span>{{ "{:,.0f}".format(order.total_amount) }} ₫</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Phí vận chuyển:</span>
+                            <span>Miễn phí</span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>Tổng cộng:</span>
+                            <span>{{ "{:,.0f}".format(order.total_amount) }} ₫</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tracking Info (example) -->
+        {% if order.status in ['processing', 'shipped'] %}
+        <section class="tracking-info">
+            <h2>Thông tin vận chuyển</h2>
+
+            <div class="info-card">
+                <div class="tracking-timeline">
+                    <div class="timeline-item {% if order.status in ['processing', 'shipped', 'delivered'] %}active{% endif %}">
+                        <div class="timeline-icon"><i class="fas fa-check"></i></div>
+                        <div class="timeline-content">
+                            <h3>Đã xác nhận</h3>
+                            <p>Đơn hàng của bạn đã được xác nhận</p>
+                            <div class="timeline-date">{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item {% if order.status in ['processing', 'shipped', 'delivered'] %}active{% endif %}">
+                        <div class="timeline-icon"><i class="fas fa-box"></i></div>
+                        <div class="timeline-content">
+                            <h3>Đang xử lý</h3>
+                            <p>Đơn hàng của bạn đang được chuẩn bị</p>
+                            <div class="timeline-date">{{ (order.created_at + timedelta(hours=2)).strftime('%d/%m/%Y %H:%M') }}</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item {% if order.status in ['shipped', 'delivered'] %}active{% endif %}">
+                        <div class="timeline-icon"><i class="fas fa-shipping-fast"></i></div>
+                        <div class="timeline-content">
+                            <h3>Đang vận chuyển</h3>
+                            <p>Đơn hàng của bạn đang được vận chuyển</p>
+                            {% if order.status in ['shipped', 'delivered'] %}
+                            <div class="timeline-date">{{ (order.created_at + timedelta(days=1)).strftime('%d/%m/%Y %H:%M') }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="timeline-item {% if order.status == 'delivered' %}active{% endif %}">
+                        <div class="timeline-icon"><i class="fas fa-home"></i></div>
+                        <div class="timeline-content">
+                            <h3>Đã giao hàng</h3>
+                            <p>Đơn hàng của bạn đã được giao thành công</p>
+                            {% if order.status == 'delivered' %}
+                            <div class="timeline-date">{{ (order.created_at + timedelta(days=3)).strftime('%d/%m/%Y %H:%M') }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Actions -->
+        <section class="order-actions">
+            <a href="{{ url_for('cart.order_history') }}" class="btn btn-secondary">
+                Quay lại đơn hàng
+            </a>
+
+            {% if order.status == 'pending' %}
+            <form action="{{ url_for('cart.cancel_order', order_id=order.id) }}" method="POST" style="display: inline;">
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?');">
+                    Hủy đơn hàng
+                </button>
+            </form>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // JavaScript không còn cần thiết vì đã thay bằng form
+</script>
+{% endblock %}

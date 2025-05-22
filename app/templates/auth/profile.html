@@ -1,0 +1,304 @@
+{% extends "layout.html" %}
+
+{% block title %}Thông tin tài khoản - TechMart{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 0;">
+    <h1>Thông tin tài khoản</h1>
+
+    <div class="profile-container">
+        <!-- Account Info Card -->
+        <div class="account-info">
+            <div class="card account-card">
+                <div class="card-header">
+                    <h2>Thông tin cá nhân</h2>
+                    <button class="edit-btn" id="toggleEditForm"><i class="fas fa-pencil-alt"></i> Chỉnh sửa</button>
+                </div>
+
+                <div class="user-info" id="userInfoDisplay">
+                    <div class="avatar-container">
+                        <!-- Thay thế div avatar bằng img để hiển thị ảnh người dùng -->
+                        <img id="userAvatar" class="avatar" src="{{ current_user.avatar_url if current_user.avatar_url else url_for('static', filename='images/default-avatar.png') }}" alt="User Avatar">
+                        <div class="user-role">
+                            <span class="role-badge">{{ current_user.role }}</span>
+                        </div>
+                        <!-- Thêm nút để tải ảnh lên -->
+                        <div class="avatar-upload">
+                            <label for="avatarInput" class="avatar-upload-btn">
+                                <i class="fas fa-camera"></i> Thêm ảnh
+                            </label>
+                            <input type="file" id="avatarInput" name="avatar" accept="image/*" style="display: none;">
+                        </div>
+                    </div>
+
+                    <div class="info-details">
+                        <div class="info-row">
+                            <div class="info-group">
+                                <label><i class="fas fa-user"></i> Tên đăng nhập</label>
+                                <span class="info-value">{{ current_user.username }}</span>
+                            </div>
+
+                            <div class="info-group">
+                                <label><i class="fas fa-envelope"></i> Email</label>
+                                <span class="info-value">{{ current_user.email }}</span>
+                            </div>
+                        </div>
+
+                        <div class="info-row">
+                            <div class="info-group">
+                                <label><i class="fas fa-id-card"></i> Họ và tên</label>
+                                <span class="info-value {% if not current_user.last_name and not current_user.first_name %}empty-value{% endif %}">
+                                    {% if current_user.last_name or current_user.first_name %}
+                                        {{ current_user.last_name }} {{ current_user.first_name }}
+                                    {% else %}
+                                        Chưa cập nhật
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            <div class="info-group">
+                                <label><i class="fas fa-calendar-alt"></i> Ngày tham gia</label>
+                                <span class="info-value">{{ current_user.created_at.strftime('%d/%m/%Y') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Profile Form -->
+                <form id="editProfileForm" style="display: none;" method="post">
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" id="email" name="email" class="form-control" value="{{ current_user.email }}" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="last_name" class="form-label">Họ</label>
+                            <input type="text" id="last_name" name="last_name" class="form-control" value="{{ current_user.last_name or '' }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="first_name" class="form-label">Tên</label>
+                            <input type="text" id="first_name" name="first_name" class="form-control" value="{{ current_user.first_name or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" id="cancelEdit">Hủy</button>
+                        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Change Password Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Đổi mật khẩu</h2>
+                </div>
+                <div class="card-body">
+                    <p>Bạn muốn thay đổi mật khẩu?</p>
+                    <a href="{{ url_for('auth.change_password') }}" class="btn btn-primary">Đổi mật khẩu</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Section -->
+        <div class="activity-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Đơn hàng gần đây</h2>
+                    {% if recent_orders %}
+                    <a href="{{ url_for('cart.order_history') }}" class="view-all">Xem tất cả</a>
+                    {% endif %}
+                </div>
+
+                <div class="recent-orders">
+                    {% if recent_orders %}
+                        {% for order in recent_orders %}
+                        <div class="order-item">
+                            <div class="order-info">
+                                <div class="order-id">Đơn hàng #{{ order.id }}</div>
+                                <div class="order-date">{{ order.created_at.strftime('%d/%m/%Y') }}</div>
+                                <div class="order-total">{{ "{:,.0f}".format(order.total_amount) }} ₫</div>
+                                <div class="order-status">
+                                    <span class="status-badge status-{{ order.status }}">
+                                        {{ get_order_status_label(order.status) }}
+                                    </span>
+                                </div>
+                            </div>
+                            <a href="{{ url_for('cart.order_detail', order_id=order.id) }}" class="btn btn-sm">Chi tiết</a>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <p>Bạn chưa có đơn hàng nào</p>
+                            <a href="{{ url_for('main.index') }}" class="btn btn-primary">Mua sắm ngay</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Địa chỉ giao hàng</h2>
+                </div>
+
+                <div id="addressesContainer">
+                    {% if addresses %}
+                        {% for address in addresses %}
+                        <div class="address-item">
+                            <div class="address-info">
+                                <div class="address-name">{{ address.recipient_name }}</div>
+                                <div class="address-phone">{{ address.phone }}</div>
+                                <div class="address-text">{{ address.address }}</div>
+                                {% if address.is_default %}
+                                <div class="address-default">Mặc định</div>
+                                {% endif %}
+                            </div>
+                            <div class="address-actions">
+                                <button class="btn-icon edit-address" data-id="{{ address.id }}"><i class="fas fa-pencil-alt"></i></button>
+                                <button class="btn-icon delete-address" data-id="{{ address.id }}"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <!-- Thêm nút thêm địa chỉ mới sau danh sách địa chỉ -->
+                        <div class="add-new-address mt-3">
+                            <button class="btn btn-outline-primary btn-sm" id="newAddressBtn">
+                                <i class="fas fa-plus"></i> Thêm địa chỉ mới
+                            </button>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <p>Bạn chưa có địa chỉ giao hàng nào</p>
+                            <button class="btn btn-primary" id="emptyAddressBtn">Thêm địa chỉ mới</button>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Address Form -->
+                <form id="addressForm" style="display: none;" method="post" action="{{ url_for('auth.add_address') }}">
+                    <div class="form-group">
+                        <label for="recipient_name" class="form-label">Họ tên người nhận</label>
+                        <input type="text" id="recipient_name" name="recipient_name" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone" class="form-label">Số điện thoại</label>
+                        <input type="tel" id="phone" name="phone" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address" class="form-label">Địa chỉ chi tiết</label>
+                        <textarea id="address" name="address" class="form-control" rows="3" required></textarea>
+                    </div>
+
+                    <div class="form-check">
+                        <input type="checkbox" id="is_default" name="is_default" class="form-check-input">
+                        <label for="is_default" class="form-check-label">Đặt làm địa chỉ mặc định</label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" id="cancelAddressForm">Hủy</button>
+                        <button type="submit" class="btn btn-primary">Lưu địa chỉ</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Profile editing
+        const toggleEditBtn = document.getElementById('toggleEditForm');
+        const userInfoDisplay = document.getElementById('userInfoDisplay');
+        const editProfileForm = document.getElementById('editProfileForm');
+        const cancelEditBtn = document.getElementById('cancelEdit');
+
+        if (toggleEditBtn && userInfoDisplay && editProfileForm && cancelEditBtn) {
+            toggleEditBtn.addEventListener('click', function() {
+                userInfoDisplay.style.display = 'none';
+                editProfileForm.style.display = 'block';
+            });
+
+            cancelEditBtn.addEventListener('click', function() {
+                editProfileForm.style.display = 'none';
+                userInfoDisplay.style.display = 'flex';
+            });
+        }
+
+        // Avatar upload preview
+        const avatarInput = document.getElementById('avatarInput');
+        const userAvatar = document.getElementById('userAvatar');
+
+        if (avatarInput && userAvatar) {
+            avatarInput.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        userAvatar.src = e.target.result; // Hiển thị ảnh mới ngay lập tức
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // Address management
+        const addressForm = document.getElementById('addressForm');
+        const addressesContainer = document.getElementById('addressesContainer');
+        const cancelAddressBtn = document.getElementById('cancelAddressForm');
+        const emptyAddressBtn = document.getElementById('emptyAddressBtn');
+        const newAddressBtn = document.getElementById('newAddressBtn');
+
+        function showAddressForm() {
+            addressForm.style.display = 'block';
+            addressesContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function hideAddressForm() {
+            addressForm.style.display = 'none';
+            addressForm.reset(); // Reset form về trạng thái ban đầu
+        }
+
+        if (emptyAddressBtn) {
+            emptyAddressBtn.addEventListener('click', showAddressForm);
+        }
+
+        if (newAddressBtn) {
+            newAddressBtn.addEventListener('click', showAddressForm);
+        }
+
+        if (cancelAddressBtn) {
+            cancelAddressBtn.addEventListener('click', function() {
+                hideAddressForm(); // Ẩn form khi nhấn "Hủy"
+            });
+        }
+
+        const editAddressBtns = document.querySelectorAll('.edit-address');
+        editAddressBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const addressId = this.getAttribute('data-id');
+                alert('Tính năng chỉnh sửa địa chỉ sẽ được cập nhật trong phiên bản tới!');
+            });
+        });
+
+        const deleteAddressBtns = document.querySelectorAll('.delete-address');
+        deleteAddressBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const addressId = this.getAttribute('data-id');
+                if (confirm('Bạn có chắc chắn muốn xóa địa chỉ này?')) {
+                    alert('Tính năng xóa địa chỉ sẽ được cập nhật trong phiên bản tới!');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

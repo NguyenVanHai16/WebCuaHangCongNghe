@@ -1,0 +1,240 @@
+{% extends "layout.html" %}
+
+{% block title %}Chi tiết đơn hàng #{{ order.id }} - TechMart{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<style>
+.order-actions {
+    display: flex !important;
+    gap: 10px !important;
+    justify-content: center !important;
+    margin-top: 20px !important;
+}
+.btn-danger, .btn-success {
+    display: inline-block !important;
+    visibility: visible !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 0;">
+    <div class="page-header">
+        <h1>Chi tiết đơn hàng #{{ order.id }}</h1>
+    </div>
+
+    <div class="order-detail">
+        <!-- Order Info -->
+        <section class="order-info">
+            <h2>Thông tin đơn hàng</h2>
+
+            <div class="info-card">
+                <div class="info-row">
+                    <div class="info-group">
+                        <div class="info-label">Mã đơn hàng</div>
+                        <div class="info-value">#{{ order.id }}</div>
+                    </div>
+
+                    <div class="info-group">
+                        <div class="info-label">Ngày đặt hàng</div>
+                        <div class="info-value">{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+                    </div>
+
+                    <div class="info-group">
+                        <div class="info-label">Trạng thái</div>
+                        <div class="info-value">
+                            <span class="status-badge status-{{ order.status }}">
+                                {{ get_order_status_label(order.status) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="info-group">
+                        <div class="info-label">Tổng tiền</div>
+                        <div class="info-value info-price">{{ "{:,.0f}".format(order.total_amount) }} ₫</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Customer & Shipping Info -->
+        <section class="customer-shipping">
+            <div class="info-grid">
+                <div class="info-card">
+                    <h2>Thông tin khách hàng</h2>
+                    <div class="customer-info">
+                        <div class="info-group">
+                            <div class="info-label">Họ tên</div>
+                            <div class="info-value">{{ order.user.last_name }} {{ order.user.first_name }}</div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">Email</div>
+                            <div class="info-value">{{ order.user.email }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h2>Thông tin giao hàng</h2>
+                    <div class="shipping-info">
+                        <div class="info-group">
+                            <div class="info-label">Địa chỉ giao hàng</div>
+                            <div class="info-value">{{ order.shipping_address }}</div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">Phương thức thanh toán</div>
+                            <div class="info-value">
+                                {% if order.payment_method == 'cash' %}
+                                    Thanh toán khi nhận hàng (COD)
+                                {% elif order.payment_method == 'bank_transfer' %}
+                                    Chuyển khoản ngân hàng
+                                {% elif order.payment_method == 'credit_card' %}
+                                    Thẻ tín dụng/Ghi nợ
+                                {% else %}
+                                    {{ order.payment_method }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">Thời gian giao hàng dự kiến</div>
+                            <div class="info-value">
+                                {% if order.estimated_delivery %}
+                                    {{ order.estimated_delivery.strftime('%d/%m/%Y %H:%M') }}
+                                {% else %}
+                                    Chưa xác định
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Order Items -->
+        <section class="order-items">
+            <h2>Sản phẩm đã đặt</h2>
+
+            <div class="items-table">
+                {% for item in order.order_items %}
+                <div class="product-item" style="margin-bottom: 30px;">
+                    <!-- Ảnh sản phẩm -->
+                    <div class="product-image" style="text-align: center; margin-bottom: 15px;">
+                        <img src="{{ item.product.image | default(url_for('static', filename='img/default-product.jpg')) }}" alt="{{ item.product.name }}" style="width: 120px; height: 120px; object-fit: cover;" onerror="this.src='{{ url_for('static', filename='img/default-product.jpg') }}'">
+                    </div>
+
+                    <!-- Bảng thông tin sản phẩm -->
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="border: 1px solid #ddd; padding: 8px; background-color: #f5f7fa;">Sản phẩm</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; background-color: #f5f7fa;">Đơn giá</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; background-color: #f5f7fa;">Số lượng</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; background-color: #f5f7fa;">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;">
+                                    <div class="product-details">
+                                        <div class="product-name">{{ item.product.name }}</div>
+                                        <div class="product-meta">{{ item.product.manufacturer }}</div>
+                                    </div>
+                                </td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ "{:,.0f}".format(item.price) }} ₫</td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ item.quantity }}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ "{:,.0f}".format(item.price * item.quantity) }} ₫</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                {% endfor %}
+
+                <div class="table-footer" style="margin-top: 20px;">
+                    <div class="order-summary">
+                        <div class="summary-row">
+                            <span>Tạm tính:</span>
+                            <span>{{ "{:,.0f}".format(order.total_amount) }} ₫</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Phí vận chuyển:</span>
+                            <span>Miễn phí</span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>Tổng cộng:</span>
+                            <span>{{ "{:,.0f}".format(order.total_amount) }} ₫</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Actions -->
+        <section class="order-actions button-group">
+            <a href="{{ url_for('admin.list_products') }}" class="btn btn-secondary btn-back">
+                Quay lại
+            </a>
+
+            {% if order.status == 'pending' %}
+            <form action="{{ url_for('admin.approve_order', order_id=order.id) }}" method="POST" style="display: inline;">
+                <button type="submit" class="btn btn-success" onclick="return confirm('Bạn có chắc chắn muốn duyệt đơn hàng này không?');">
+                    Duyệt đơn hàng
+                </button>
+            </form>
+            <form action="{{ url_for('admin.cancel_order', order_id=order.id) }}" method="POST" style="display: inline;">
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?');">
+                    Hủy đơn hàng
+                </button>
+            </form>
+            {% endif %}
+
+            <!-- Nút Xóa -->
+            <form action="{{ url_for('admin.delete_order', order_id=order.id) }}" method="POST" style="display: inline;">
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa đơn hàng này không?');">
+                    Xóa đơn hàng
+                </button>
+            </form>
+        </section>
+    </div>
+</div>
+
+<!-- Modal xác nhận hủy đơn -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Hủy đơn hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="cancelForm" action="{{ url_for('admin.cancel_order', order_id=order.id) }}" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="cancel_reason" class="form-label">Lý do hủy đơn</label>
+                        <textarea class="form-control" id="cancel_reason" name="cancel_reason"
+                                  rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-danger">Xác nhận hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add JavaScript for cancel modal -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const cancelButton = document.querySelector('.order-actions .btn-danger');
+        if (cancelButton) {
+            cancelButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                const modal = new bootstrap.Modal(document.getElementById('cancelModal'));
+                modal.show();
+            });
+        }
+    });
+</script>
+{% endblock %}

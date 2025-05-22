@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+
+{% block title %}Lịch sử đơn hàng - TechMart{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 0;">
+    <h1>Lịch sử đơn hàng</h1>
+
+    <div class="order-history">
+        {% if orders %}
+            {% for order in orders %}
+            <div class="order-card">
+                <div class="order-header">
+                    <div>
+                        <h2>Đơn hàng #{{ order.id }}</h2>
+                        <div class="order-date">Đặt lúc: {{ order.created_at.strftime('%d/%m/%Y %H:%M') | default('N/A') }}</div>
+                    </div>
+                    <div class="order-status">
+                        <span class="status-badge status-{{ order.status | default('unknown') }}">
+                            {{ get_order_status_label(order.status) }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="order-summary">
+                    <div class="summary-item">
+                        <span class="label">Tổng tiền:</span>
+                        <span class="value">{{ order.total_amount | default(0) | int | format_number }} ₫</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Phương thức thanh toán:</span>
+                        <span class="value">
+                            {% if order.payment_method == 'cash' %}
+                                Thanh toán khi nhận hàng (COD)
+                            {% elif order.payment_method == 'bank_transfer' %}
+                                Chuyển khoản ngân hàng
+                            {% elif order.payment_method == 'credit_card' %}
+                                Thẻ tín dụng/Ghi nợ
+                            {% else %}
+                                {{ order.payment_method | default('Không xác định') }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Địa chỉ giao hàng:</span>
+                        <span class="value address">{{ order.shipping_address | default('Không có địa chỉ') }}</span>
+                    </div>
+                </div>
+
+                <div class="order-items">
+                    {% for item in order.items %}
+                    <div class="order-item">
+                        <div class="item-image">
+                            <img src="{{ item.product.image | default(url_for('static', filename='img/default-product.jpg')) }}" alt="{{ item.product.name | default('Sản phẩm không tên') }}" onerror="this.src='{{ url_for('static', filename='img/default-product.jpg') }}'">
+                        </div>
+                        <div class="item-info">
+                            <div class="item-name">{{ item.product.name | default('Sản phẩm không tên') }}</div>
+                            <div class="item-price">{{ item.price | default(0) | int | format_number }} ₫ × {{ item.quantity | default(0) }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="order-actions">
+                    <a href="{{ url_for('cart.order_detail', order_id=order.id) }}" class="btn btn-danger">
+                        Xem chi tiết
+                    </a>
+                    <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+                        Quay lại
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-orders">
+                <div class="empty-icon">
+                    <img src="{{ url_for('static', filename='img/empty-results.svg') }}" alt="Không có đơn hàng" width="180">
+                </div>
+                <h2>Bạn chưa có đơn hàng nào</h2>
+                <p>Hãy khám phá các sản phẩm của chúng tôi và bắt đầu mua sắm.</p>
+                <a href="{{ url_for('main.index') }}" class="btn btn-primary">Mua sắm ngay</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

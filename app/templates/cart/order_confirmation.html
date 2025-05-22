@@ -1,0 +1,229 @@
+{% extends "layout.html" %}
+
+{% block title %}Xác nhận đơn hàng - TechMart{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 3rem 0;">
+    <div class="order-confirmation">
+        <!-- Success Message -->
+        <div class="success-message text-center">
+            <div class="checkmark-circle">
+                <div class="checkmark-stem"></div>
+                <div class="checkmark-kick"></div>
+            </div>
+            <h1 style="color: #28a745; font-size: 2.5rem; margin-top: 1rem;">Đặt hàng thành công!</h1>
+            <p style="font-size: 1.1rem; color: #666;">Cảm ơn bạn đã đặt hàng. Đơn hàng của bạn đã được xác nhận.</p>
+            <p style="font-size: 1.1rem; color: #333;">Mã đơn hàng: <strong>#{{ order.id }}</strong></p>
+        </div>
+
+        <!-- Order Details -->
+        <div class="order-details" style="margin-top: 3rem; background: #fff; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <h2 style="font-size: 1.8rem; color: #333; margin-bottom: 1.5rem;">Chi tiết đơn hàng</h2>
+
+            <div class="order-meta">
+                <div class="order-meta-item">
+                    <span class="label">Ngày đặt hàng:</span>
+                    <span class="value">{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                </div>
+                <div class="order-meta-item">
+                    <span class="label">Trạng thái:</span>
+                    <span class="value status-badge">{{ get_order_status_label(order.status) }}</span>
+                </div>
+                <div class="order-meta-item">
+                    <span class="label">Địa chỉ giao hàng:</span>
+                    <span class="value">{{ order.shipping_address }}</span>
+                </div>
+                <div class="order-meta-item">
+                    <span class="label">Phương thức thanh toán:</span>
+                    <span class="value">
+                        {% if order.payment_method == 'cash' %}
+                            Thanh toán khi nhận hàng (COD)
+                        {% elif order.payment_method == 'bank_transfer' %}
+                            Chuyển khoản ngân hàng
+                        {% elif order.payment_method == 'credit_card' %}
+                            Thẻ tín dụng/Ghi nợ
+                        {% else %}
+                            {{ order.payment_method }}
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Items -->
+            <div class="order-items" style="margin-top: 2rem;">
+                <h3 style="font-size: 1.5rem; color: #333; margin-bottom: 1.5rem;">Sản phẩm</h3>
+
+                <div class="order-items-list">
+                    {% for item in order_items %}
+                    <div class="order-item" style="margin-bottom: 2rem;">
+                        <!-- Ảnh sản phẩm -->
+                        <div class="item-image" style="text-align: center; margin-bottom: 1rem;">
+                            <img src="{{ item.product.image | default(url_for('static', filename='img/default-product.jpg')) }}" alt="{{ item.product.name }}" style="width: 120px; height: 120px; object-fit: cover;" onerror="this.src='{{ url_for('static', filename='img/default-product.jpg') }}'">
+                        </div>
+
+                        <!-- Thông tin sản phẩm -->
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th style="border: 1px solid #ddd; padding: 8px; background-color: #f5f7fa;">Sản phẩm</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; background-color: #f5f7fa;">Đơn giá</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; background-color: #f5f7fa;">Số lượng</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; background-color: #f5f7fa;">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 8px;">
+                                        <div class="item-details">
+                                            <h4 class="item-name" style="margin: 0; font-size: 1rem;">{{ item.product.name }}</h4>
+                                        </div>
+                                    </td>
+                                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ "{:,.0f}".format(item.price) }} ₫</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ item.quantity }}</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ "{:,.0f}".format(item.price * item.quantity) }} ₫</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Order Summary -->
+                <div class="order-summary" style="margin-top: 2rem;">
+                    <div class="summary-row">
+                        <span>Tổng tiền sản phẩm:</span>
+                        <span>{{ "{:,.0f}".format(order.total_amount) }} ₫</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Phí vận chuyển:</span>
+                        <span>Miễn phí</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Tổng cộng:</span>
+                        <span>{{ "{:,.0f}".format(order.total_amount) }} ₫</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Next Steps -->
+        <div class="next-steps text-center" style="margin-top: 3rem;">
+            <p style="font-size: 1.1rem; color: #666;">Chúng tôi sẽ gửi email cập nhật khi đơn hàng của bạn được vận chuyển.</p>
+
+            <div class="action-buttons" style="display: flex; justify-content: center; gap: 15px; margin-top: 1.5rem;">
+                <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Tiếp tục mua sắm</a>
+                <a href="{{ url_for('cart.order_history') }}" class="btn btn-danger">Xem đơn hàng của tôi</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<style>
+    /* Success Message Animation */
+    .checkmark-circle {
+        width: 80px;
+        height: 80px;
+        position: relative;
+        margin: 0 auto;
+        border-radius: 50%;
+        background: #28a745;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .checkmark-stem, .checkmark-kick {
+        position: absolute;
+        background: white;
+    }
+
+    .checkmark-stem {
+        width: 5px;
+        height: 30px;
+        transform: rotate(45deg);
+        top: 25px;
+        left: 35px;
+    }
+
+    .checkmark-kick {
+        width: 15px;
+        height: 5px;
+        transform: rotate(-45deg);
+        top: 48px;
+        left: 28px;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4);
+        }
+        50% {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 15px rgba(40, 167, 69, 0);
+        }
+    }
+
+    /* Order Meta Styling */
+    .order-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .order-meta-item {
+        background: #f9f9f9;
+        padding: 1rem;
+        border-radius: 8px;
+    }
+
+    .order-meta-item .label {
+        font-weight: bold;
+        color: #333;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .order-meta-item .value {
+        color: #666;
+    }
+
+    /* Order Items Styling */
+    .order-items-list .order-item {
+        border-bottom: 1px solid #eee;
+        padding-bottom: 1rem;
+    }
+
+    .order-items-list .order-item:last-child {
+        border-bottom: none;
+    }
+
+    .order-summary .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        font-size: 1.1rem;
+    }
+
+    .order-summary .summary-row.total {
+        font-weight: bold;
+        border-top: 1px solid #ddd;
+        padding-top: 1rem;
+        margin-top: 1rem;
+    }
+
+    /* Button Styling */
+    .btn-primary-orange {
+        background-color: #ff6200;
+        border-color: #ff6200;
+        color: white;
+    }
+
+    .btn-primary-orange:hover {
+        background-color: #e55b00;
+        border-color: #e55b00;
+    }
+</style>

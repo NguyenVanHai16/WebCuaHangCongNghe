@@ -1,0 +1,83 @@
+{% extends "layout.html" %}
+
+{% block title %}TechMart - Cửa hàng công nghệ hàng đầu Việt Nam{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-container">
+        <div class="hero-content">
+            <h1>Công nghệ đỉnh cao<br>Trải nghiệm hoàn hảo</h1>
+            <p>TechMart - Địa chỉ tin cậy cho laptop, điện thoại, chuột, bàn phím và tai nghe với giá tốt nhất và dịch vụ chuyên nghiệp.</p>
+            <a href="{{ url_for('products.all_products') }}" class="btn btn-primary">Mua sắm ngay</a>
+        </div>
+    </div>
+</section>
+
+<!-- Sản phẩm mới -->
+<section class="products-section">
+    <div class="container">
+        <h2 class="section-title">Sản phẩm mới</h2>
+        <div class="product-grid">
+            {% for product in new_products %}
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="{{ product.image }}" alt="{{ product.name }}">
+                </div>
+                <div class="product-details">
+                    <h3 class="product-title">{{ product.name }}</h3>
+                    <p class="product-price">{{ '{:,.0f}'.format(product.price|float) }} VNĐ</p>
+                    <a href="{{ url_for('products.product_detail', product_id=product.id) }}" class="btn btn-details">Xem chi tiết</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Sản phẩm nổi bật -->
+<section class="products-section">
+    <div class="container">
+        <h2 class="section-title">Sản phẩm nổi bật</h2>
+        <div class="product-grid">
+            {% for product in featured_products %}
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="{{ product.image }}" alt="{{ product.name }}">
+                </div>
+                <div class="product-details">
+                    <h3 class="product-title">{{ product.name }}</h3>
+                    <p class="product-price">{{ '{:,.0f}'.format(product.price|float) }} VNĐ</p>
+                    <a href="{{ url_for('products.product_detail', product_id=product.id) }}" class="btn btn-details">Xem chi tiết</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Sản phẩm giảm giá -->
+<section class="products-section">
+    <div class="container">
+        <h2 class="section-title">Sản phẩm giảm giá</h2>
+        <div class="product-grid">
+            {% for product in sale_products %}
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="{{ product.image }}" alt="{{ product.name }}">
+                    <span class="product-badge badge-sale">Giảm {{ ((product.price|float - product.discounted_price|float) / product.price|float * 100)|round(0) }}%</span>
+                </div>
+                <div class="product-details">
+                    <h3 class="product-title">{{ product.name }}</h3>
+                    <p class="product-price">
+                        <span class="current-price">{{ '{:,.0f}'.format(product.discounted_price|float) }} VNĐ</span>
+                        <span class="original-price">{{ '{:,.0f}'.format(product.price|float) }} VNĐ</span>
+                    </p>
+                    <a href="{{ url_for('products.product_detail', product_id=product.id) }}" class="btn btn-details">Xem chi tiết</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

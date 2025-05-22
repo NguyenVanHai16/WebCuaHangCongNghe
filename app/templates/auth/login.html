@@ -1,0 +1,178 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login_register.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    /* Ẩn modal mặc định */
+    #forgot-password-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+    .modal-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        width: 90%;
+        max-width: 500px;
+        position: relative;
+    }
+    .modal-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 24px;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-box">
+        <div class="auth-header">
+            <h2>Đăng nhập</h2>
+            <p>Đăng nhập vào tài khoản TechMart của bạn</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="auth-tabs">
+            <div class="auth-tab active">Đăng nhập</div>
+            <div class="auth-tab"><a href="{{ url_for('auth.register') }}">Đăng ký</a></div>
+        </div>
+
+        <form method="POST" action="" class="auth-form">
+            {{ form.hidden_tag() }}
+
+            <div class="form-group">
+                {{ form.username.label(class="form-label") }}
+                {{ form.username(class="form-control") }}
+                {% if form.username.errors %}
+                    {% for error in form.username.errors %}
+                        <span class="form-error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    {{ form.password.label(class="form-label") }}
+                    <a href="#" class="form-text" id="forgot-password-link">Quên mật khẩu?</a>
+                </div>
+                <div class="password-wrapper">
+                    {{ form.password(class="form-control") }}
+                    <button type="button" class="toggle-password" aria-label="Chuyển đổi hiển thị mật khẩu">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                {% if form.password.errors %}
+                    {% for error in form.password.errors %}
+                        <span class="form-error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-check">
+                    {{ form.remember() }}
+                    {{ form.remember.label }}
+                </label>
+            </div>
+
+            <div class="form-group">
+                {{ form.submit(class="btn btn-primary btn-block") }}
+            </div>
+        </form>
+
+        <!-- Modal đặt lại mật khẩu -->
+        <div class="modal" id="forgot-password-modal">
+            <div class="modal-content">
+                <span class="modal-close">×</span>
+                <div class="auth-header">
+                    <h2>Đặt lại mật khẩu</h2>
+                    <p>Nhập email của bạn để nhận liên kết đặt lại mật khẩu</p>
+                </div>
+                <form method="POST" action="{{ url_for('auth.forgot_password') }}" class="auth-form">
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" id="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary btn-block">Gửi liên kết đặt lại</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="auth-footer">
+            <p>Chưa có tài khoản? <a href="{{ url_for('auth.register') }}">Đăng ký ngay</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Chuyển đổi hiển thị mật khẩu
+        const togglePassword = document.querySelector('.toggle-password');
+        if (togglePassword) {
+            togglePassword.addEventListener('click', function () {
+                const passwordInput = this.previousElementSibling;
+                const icon = this.querySelector('i');
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        }
+
+        // Xử lý modal đặt lại mật khẩu
+        const modal = document.getElementById('forgot-password-modal');
+        const forgotPasswordLink = document.getElementById('forgot-password-link');
+        const closeModal = document.querySelector('.modal-close');
+
+        // Đảm bảo modal ẩn khi tải trang
+        if (modal) {
+            modal.style.display = 'none';
+        }
+
+        // Hiển thị modal khi nhấn "Quên mật khẩu?"
+        if (forgotPasswordLink) {
+            forgotPasswordLink.addEventListener('click', function (e) {
+                e.preventDefault();
+                modal.style.display = 'block';
+            });
+        }
+
+        // Ẩn modal khi nhấn nút đóng
+        if (closeModal) {
+            closeModal.addEventListener('click', function () {
+                modal.style.display = 'none';
+            });
+        }
+
+        // Ẩn modal khi nhấn ra ngoài
+        window.addEventListener('click', function (e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}

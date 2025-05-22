@@ -1,0 +1,314 @@
+{% extends "layout.html" %}
+
+{% block title %}Quản lý Hệ thống - TechMart{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Navigation tabs -->
+    <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="products-tab" data-bs-toggle="tab" data-bs-target="#products" type="button" role="tab">
+                Quản lý Sản phẩm
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button" role="tab">
+                Quản lý Đơn hàng
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
+                Quản lý Người dùng
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab">
+                Quản lý Bình luận
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab content -->
+    <div class="tab-content" id="adminTabContent">
+        <!-- Products Tab -->
+        <div class="tab-pane fade" id="products" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2>Danh sách sản phẩm</h2>
+                <a href="{{ url_for('admin.add_product') }}" class="btn btn-primary">Thêm sản phẩm mới</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên sản phẩm</th>
+                        <th>Giá</th>
+                        <th>Giá giảm</th>
+                        <th>Danh mục</th>
+                        <th>Kho</th>
+                        <th>Thao tác</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>{{ product.id }}</td>
+                        <td>{{ product.name }}</td>
+                        <td>{{ "{:,.0f}".format(product.price) }} ₫</td>
+                        <td>
+                            {% if product.discounted_price %}
+                            {{ "{:,.0f}".format(product.discounted_price) }} ₫
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>{{ product.category.name if product.category else 'N/A' }}</td>
+                        <td>{{ product.stock }}</td>
+                        <td>
+                            <a href="{{ url_for('admin.edit_product', id=product.id) }}" class="btn btn-warning btn-sm">Sửa</a>
+                            <form action="{{ url_for('admin.delete_product', id=product.id) }}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc muốn xóa sản phẩm này?')">Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Orders Tab -->
+        <div class="tab-pane fade" id="orders" role="tabpanel">
+            <h2 class="mb-3">Danh sách đơn hàng</h2>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>Mã đơn hàng</th>
+                        <th>Khách hàng</th>
+                        <th>Ngày đặt</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.user.username if order.user else 'N/A' }}</td>
+                        <td>{{ order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else 'N/A' }}</td>
+                        <td>{{ "{:,.0f}".format(order.total_amount) }}đ</td>
+                        <td>
+                            <span class="badge
+                                {% if order.status == 'pending' %}bg-warning
+                                {% elif order.status == 'confirmed' %}bg-info
+                                {% elif order.status == 'pickup_pending' %}bg-primary
+                                {% elif order.status == 'shipping' %}bg-primary
+                                {% elif order.status == 'delivered' %}bg-success
+                                {% elif order.status == 'cancelled' %}bg-danger
+                                {% else %}bg-secondary{% endif %}">
+                                {% if order.status == 'pending' %}
+                                    Chờ xác nhận
+                                {% elif order.status == 'confirmed' %}
+                                    Đã xác nhận
+                                {% elif order.status == 'pickup_pending' %}
+                                    Chờ lấy hàng
+                                {% elif order.status == 'shipping' %}
+                                    Đang giao hàng
+                                {% elif order.status == 'delivered' %}
+                                    Đã giao hàng
+                                {% elif order.status == 'cancelled' %}
+                                    Đã hủy
+                                {% else %}
+                                    {{ order.status }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('admin.order_detail', order_id=order.id) }}"
+                                   class="btn btn-primary btn-sm">
+                                    <i class="fas fa-eye"></i> Chi tiết
+                                </a>
+                                {% if order.status == 'pending' %}
+                                <form action="{{ url_for('admin.approve_order', order_id=order.id) }}"
+                                      method="post" class="d-inline ms-1">
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <i class="fas fa-check"></i> Duyệt
+                                    </button>
+                                </form>
+                                <button type="button" class="btn btn-sm btn-danger ms-1"
+                                        onclick="showCancelModal({{ order.id }})">
+                                    <i class="fas fa-times"></i> Hủy
+                                </button>
+                                {% endif %}
+                                <form action="{{ url_for('admin.delete_order', order_id=order.id) }}"
+                                      method="POST" class="d-inline ms-1">
+                                    <button type="submit" class="btn btn-sm btn-danger"
+                                            onclick="return confirm('Bạn có chắc chắn muốn xóa đơn hàng này không?');">
+                                        <i class="fas fa-trash"></i> Xóa
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Users Tab -->
+        <div class="tab-pane fade" id="users" role="tabpanel">
+            <h2 class="mb-3">Danh sách người dùng</h2>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên người dùng</th>
+                        <th>Email</th>
+                        <th>Vai trò</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ 'Admin' if user.role == 'admin' else 'Người dùng' }}</td>
+                        <td>{{ user.created_at.strftime('%d-%m-%Y %H:%M') if user.created_at else 'N/A' }}</td>
+                        <td>
+                            <a href="{{ url_for('admin.edit_user', id=user.id) }}" class="btn btn-warning btn-sm">Sửa</a>
+                            {% if current_user.id != user.id %}
+                            <form action="{{ url_for('admin.delete_user', id=user.id) }}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc muốn xóa người dùng này?')">Xóa</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Comments Tab -->
+        <div class="tab-pane fade" id="comments" role="tabpanel">
+            <h2 class="mb-3">Danh sách bình luận</h2>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Người dùng</th>
+                        <th>Sản phẩm</th>
+                        <th>Nội dung</th>
+                        <th>Đánh giá</th>
+                        <th>Thời gian</th>
+                        <th>Thao tác</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for comment in comments %}
+                    <tr>
+                        <td>{{ comment.id }}</td>
+                        <td>{{ comment.user.username if comment.user else 'N/A' }}</td>
+                        <td>{{ comment.product.name if comment.product else 'N/A' }}</td>
+                        <td>{{ comment.content }}</td>
+                        <td>{{ comment.score if comment.score else 'N/A' }}</td>
+                        <td>{{ comment.timestamp.strftime('%d-%m-%Y %H:%M') if comment.timestamp else 'N/A' }}</td>
+                        <td>
+                            <a href="{{ url_for('admin.edit_comment', id=comment.id) }}" class="btn btn-warning btn-sm">Sửa</a>
+                            <form action="{{ url_for('admin.delete_comment', id=comment.id) }}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc muốn xóa bình luận này?')">Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal xác nhận hủy đơn -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Hủy đơn hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="cancelForm" action="" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="cancel_reason" class="form-label">Lý do hủy đơn</label>
+                        <textarea class="form-control" id="cancel_reason" name="cancel_reason"
+                                  rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-danger">Xác nhận hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add custom CSS -->
+<style>
+    .table-responsive {
+        margin-top: 1rem;
+    }
+    .btn-sm {
+        margin: 0 2px;
+    }
+    .nav-tabs .nav-link {
+        color: #495057;
+    }
+    .nav-tabs .nav-link.active {
+        font-weight: bold;
+        color: #007bff;
+    }
+</style>
+
+<!-- Add Bootstrap Tab JavaScript -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Lấy tham số tab từ URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab') || 'products'; // Mặc định là 'products'
+
+        // Kích hoạt tab tương ứng
+        const tabElement = document.querySelector(`#${tab}-tab`);
+        if (tabElement) {
+            const tabTrigger = new bootstrap.Tab(tabElement);
+            tabTrigger.show();
+        }
+
+        // Xử lý chuyển đổi tab
+        var triggerTabList = [].slice.call(document.querySelectorAll('#adminTabs button'));
+        triggerTabList.forEach(function(triggerEl) {
+            var tabTrigger = new bootstrap.Tab(triggerEl);
+            triggerEl.addEventListener('click', function(event) {
+                event.preventDefault();
+                tabTrigger.show();
+            });
+        });
+    });
+
+    function showCancelModal(orderId) {
+        const modal = new bootstrap.Modal(document.getElementById('cancelModal'));
+        document.getElementById('cancelForm').action =
+            "{{ url_for('admin.cancel_order', order_id=0, tab='orders') }}".replace('0', orderId);
+        modal.show();
+    }
+</script>
+{% endblock %}

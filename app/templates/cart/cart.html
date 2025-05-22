@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+
+{% block title %}Giỏ Hàng{% endblock %}
+
+{% block content %}
+<!-- Cart Section -->
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Giỏ Hàng Của Bạn</h2>
+
+        {% if cart_items %}
+        <table class="cart-table">
+            <thead>
+                <tr>
+                    <th>Sản Phẩm</th>
+                    <th>Giá</th>
+                    <th>Số Lượng</th>
+                    <th>Tổng</th>
+                    <th>Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                <tr>
+                    <td>
+                        <div class="cart-product">
+                            <img src="{{ item.product.image | default(url_for('static', filename='img/default-product.jpg')) }}" alt="{{ item.product.name | default('Sản phẩm không tên') }}" class="cart-product-image" onerror="this.src='{{ url_for('static', filename='img/default-product.jpg') }}'">
+                            <a href="{{ url_for('products.product_detail', product_id=item.product.id) }}">{{ item.product.name | default('Sản phẩm không tên') }}</a>
+                        </div>
+                    </td>
+                    <td>{{ (item.product.discounted_price if item.product.discounted_price else item.product.price) | default(0) | int | format_number }} ₫</td>
+                    <td>
+                        <form action="{{ url_for('cart.update_cart', item_id=item.id) }}" method="POST" class="update-quantity">
+                            <input type="number" name="quantity" value="{{ item.quantity | default(1) }}" min="1" class="quantity-input">
+                            <button type="submit" class="btn btn-sm btn-outline">Cập nhật</button>
+                        </form>
+                    </td>
+                    <td>{{ item.subtotal | default(0) | int | format_number }} ₫</td>
+                    <td>
+                        <form action="{{ url_for('cart.remove_from_cart', item_id=item.id) }}" method="POST">
+                            <button type="submit" class="btn btn-sm btn-danger">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="cart-summary">
+            <div class="cart-total">
+                <h3>Tổng Cộng: <span>{{ total | default(0) | int | format_number }} ₫</span></h3>
+            </div>
+            <div class="cart-actions">
+                <a href="{{ url_for('products.all_products') }}" class="btn btn-outline">Tiếp tục mua sắm</a>
+                <a href="{{ url_for('cart.checkout') }}" class="btn btn-primary">Thanh Toán</a>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-cart">
+            <p>Giỏ hàng của bạn đang trống. <a href="{{ url_for('products.all_products') }}">Mua sắm ngay!</a></p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

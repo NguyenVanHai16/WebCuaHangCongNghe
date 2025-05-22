@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="200" viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="300" height="200" fill="#E5E7EB"/>
+  <path d="M150 80L170 120H130L150 80Z" fill="#9CA3AF"/>
+  <rect x="135" y="120" width="30" height="20" fill="#9CA3AF"/>
+  <text x="150" y="160" font-family="Arial" font-size="12" text-anchor="middle" fill="#4B5563">Hình ảnh sản phẩm</text>
+</svg>

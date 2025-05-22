@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M160 40H40L60 120H140L160 40Z" fill="#E0E7FF" stroke="#3B82F6" stroke-width="3"/>
+  <path d="M80 130C80 136.075 75.0751 141 69 141C62.9249 141 58 136.075 58 130" stroke="#3B82F6" stroke-width="3"/>
+  <path d="M142 130C142 136.075 137.075 141 131 141C124.925 141 120 136.075 120 130" stroke="#3B82F6" stroke-width="3"/>
+  <text x="100" y="170" font-family="Arial" font-size="12" text-anchor="middle" fill="#6B7280">Giỏ hàng trống</text>
+</svg>

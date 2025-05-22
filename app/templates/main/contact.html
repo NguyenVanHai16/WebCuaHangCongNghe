@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+
+{% block title %}Liên hệ{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 0;">
+    <h1>Liên hệ</h1>
+
+    <div class="contact-container">
+        <div class="contact-info">
+            <h2>Thông tin liên hệ</h2>
+
+            <div class="info-item">
+                <h3>Địa chỉ</h3>
+                <p>123 Đường 8/3, Phường Phú Xá, Thành phố Thái Nguyên</p>
+            </div>
+
+            <div class="info-item">
+                <h3>Điện thoại</h3>
+                <p>(+84) 325 459 463</p>
+            </div>
+
+            <div class="info-item">
+                <h3>Email</h3>
+                <p>info@techmart.com</p>
+            </div>
+
+            <div class="info-item">
+                <h3>Giờ làm việc</h3>
+                <p>Thứ Hai - Thứ Bảy: 8:00 - 20:00</p>
+                <p>Chủ Nhật: 9:00 - 18:00</p>
+            </div>
+        </div>
+
+        <div class="contact-form">
+            <h2>Gửi tin nhắn cho chúng tôi</h2>
+
+            <form action="#" method="post">
+                <div class="form-group">
+                    <label for="name" class="form-label">Họ và tên</label>
+                    <input type="text" id="name" name="name" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" id="email" name="email" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="subject" class="form-label">Tiêu đề</label>
+                    <input type="text" id="subject" name="subject" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="message" class="form-label">Nội dung</label>
+                    <textarea id="message" name="message" class="form-control" rows="5" required></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Gửi tin nhắn</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Thanh ngang trên cùng của giỏ -->
+    <line x1="2" y1="4" x2="22" y2="4" />
+    <!-- Thân giỏ (hình chữ nhật nghiêng) -->
+    <path d="M5 4h14l2 10H3z" />
+    <!-- Hai bánh xe -->
+    <circle cx="6" cy="20" r="2" />
+    <circle cx="18" cy="20" r="2" />
+    <!-- Đường chéo biểu thị "trống" -->
+    <line x1="4" y1="6" x2="20" y2="12" stroke-dasharray="4" />
+</svg>
