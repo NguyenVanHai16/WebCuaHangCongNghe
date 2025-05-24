@@ -2,6 +2,148 @@
 
 {% block title %}Chi tiết đơn hàng #{{ order.id }} - TechMart{% endblock %}
 
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/order_styles.css') }}">
+<style>
+    /* Style cho chatbot và nút */
+    .chatbot-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        display: none;
+    }
+    .chatbot-container.active {
+        display: block;
+    }
+    .chatbot-button {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+        color: var(--light-color);
+        border: none;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        cursor: pointer;
+        box-shadow: var(--shadow-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .chatbot-button:hover {
+        background: linear-gradient(135deg, var(--secondary-color) 0%, var(--accent-color) 100%);
+        box-shadow: var(--shadow-glow);
+        transform: scale(1.1);
+    }
+    .chatbot-window {
+        background: var(--light-color);
+        border-radius: var(--card-border-radius);
+        box-shadow: var(--shadow-md);
+        width: 300px;
+        height: 400px;
+        margin-bottom: 10px;
+        padding: 10px;
+        display: none;
+        flex-direction: column;
+    }
+    .chatbot-window.active {
+        display: flex;
+    }
+    .chatbot-messages {
+        flex-grow: 1;
+        overflow-y: auto;
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px solid var(--gray-color);
+        border-radius: var(--card-border-radius);
+    }
+    .chatbot-message {
+        margin-bottom: 10px;
+        padding: 8px;
+        background: var(--light-color);
+        border-radius: var(--card-border-radius);
+        font-size: 0.9rem;
+    }
+    .chatbot-message.user-message {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+        color: var(--light-color);
+        text-align: right;
+    }
+    .chatbot-input {
+        display: flex;
+        gap: 10px;
+    }
+    .chatbot-input input {
+        flex-grow: 1;
+        padding: 8px;
+        border: 1px solid var(--gray-color);
+        border-radius: var(--card-border-radius);
+        font-size: 0.9rem;
+    }
+    .chatbot-input button {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+        color: var(--light-color);
+        border: none;
+        padding: 8px 16px;
+        border-radius: var(--card-border-radius);
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 80px;
+        height: 36px;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    .chatbot-input button:hover {
+        background: linear-gradient(135deg, var(--secondary-color) 0%, var(--accent-color) 100%);
+        box-shadow: var(--shadow-glow);
+    }
+    /* Chuẩn hóa kiểu nút */
+    .btn {
+        padding: 8px 16px;
+        border-radius: var(--card-border-radius);
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 100px;
+        height: 36px;
+    }
+    .btn-secondary {
+        background: var(--gray-color);
+        color: var(--dark-color);
+    }
+    .btn-secondary:hover {
+        background: linear-gradient(135deg, var(--gray-color) 0%, var(--secondary-color) 100%);
+        color: var(--light-color);
+        box-shadow: var(--shadow-glow);
+    }
+    .btn-danger {
+        background: linear-gradient(135deg, var(--danger-color) 0%, var(--accent-color) 100%);
+        color: var(--light-color);
+    }
+    .btn-danger:hover {
+        background: linear-gradient(135deg, #e55a5a 0%, var(--accent-color) 100%);
+        box-shadow: var(--shadow-glow);
+    }
+    /* Căn chỉnh phần Actions */
+    .order-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 20px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container" style="padding: 2rem 0;">
     <div class="page-header">
@@ -12,19 +154,16 @@
         <!-- Order Info -->
         <section class="order-info">
             <h2>Thông tin đơn hàng</h2>
-
             <div class="info-card">
                 <div class="info-row">
                     <div class="info-group">
                         <div class="info-label">Mã đơn hàng</div>
                         <div class="info-value">#{{ order.id }}</div>
                     </div>
-
                     <div class="info-group">
                         <div class="info-label">Ngày đặt hàng</div>
                         <div class="info-value">{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
                     </div>
-
                     <div class="info-group">
                         <div class="info-label">Trạng thái</div>
                         <div class="info-value">
@@ -33,7 +172,6 @@
                             </span>
                         </div>
                     </div>
-
                     <div class="info-group">
                         <div class="info-label">Tổng tiền</div>
                         <div class="info-value info-price">{{ "{:,.0f}".format(order.total_amount) }} ₫</div>
@@ -58,7 +196,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="info-card">
                     <h2>Thông tin giao hàng</h2>
                     <div class="shipping-info">
@@ -88,42 +225,40 @@
         <!-- Order Items -->
         <section class="order-items">
             <h2>Sản phẩm đã đặt</h2>
-
             <div class="items-table">
                 {% for item in order_items %}
                 <div class="product-item" style="margin-bottom: 30px;">
-                    <!-- Ảnh sản phẩm -->
                     <div class="product-image" style="text-align: center; margin-bottom: 15px;">
-                        <img src="{{ item.product.image | default(url_for('static', filename='img/default-product.jpg')) }}" alt="{{ item.product.name }}" style="width: 120px; height: 120px; object-fit: cover;" onerror="this.src='{{ url_for('static', filename='img/default-product.jpg') }}'">
+                        <img src="{{ url_for('static', filename=item.product.image.lstrip('/static/')) if item.product.image else url_for('static', filename='uploads/sanpham/default.jpg') }}"
+                             alt="{{ item.product.name }}"
+                             style="width: 120px; height: 120px; object-fit: cover;"
+                             onerror="this.src='{{ url_for('static', filename='uploads/sanpham/default.jpg') }}'">
                     </div>
-
-                    <!-- Bảng thông tin sản phẩm -->
                     <table style="width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr>
-                                <th style="border: 1px solid #ddd; padding: 8px; background-color: #f5f7fa;">Sản phẩm</th>
-                                <th style="border: 1px solid #ddd; padding: 8px; background-color: #f5f7fa;">Đơn giá</th>
-                                <th style="border: 1px solid #ddd; padding: 8px; background-color: #f5f7fa;">Số lượng</th>
-                                <th style="border: 1px solid #ddd; padding: 8px; background-color: #f5f7fa;">Thành tiền</th>
+                                <th style="border: 1px solid var(--gray-color); padding: 8px; background-color: var(--light-color);">Sản phẩm</th>
+                                <th style="border: 1px solid var(--gray-color); padding: 8px; background-color: var(--light-color);">Đơn giá</th>
+                                <th style="border: 1px solid var(--gray-color); padding: 8px; background-color: var(--light-color);">Số lượng</th>
+                                <th style="border: 1px solid var(--gray-color); padding: 8px; background-color: var(--light-color);">Thành tiền</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td style="border: 1px solid #ddd; padding: 8px;">
+                                <td style="border: 1px solid var(--gray-color); padding: 8px;">
                                     <div class="product-details">
                                         <div class="product-name">{{ item.product.name }}</div>
                                         <div class="product-meta">{{ item.product.manufacturer }}</div>
                                     </div>
                                 </td>
-                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ "{:,.0f}".format(item.price) }} ₫</td>
-                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ item.quantity }}</td>
-                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ "{:,.0f}".format(item.price * item.quantity) }} ₫</td>
+                                <td style="border: 1px solid var(--gray-color); padding: 8px; text-align: center;">{{ "{:,.0f}".format(item.price) }} ₫</td>
+                                <td style="border: 1px solid var(--gray-color); padding: 8px; text-align: center;">{{ item.quantity }}</td>
+                                <td style="border: 1px solid var(--gray-color); padding: 8px; text-align: center;">{{ "{:,.0f}".format(item.price * item.quantity) }} ₫</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
                 {% endfor %}
-
                 <div class="table-footer" style="margin-top: 20px;">
                     <div class="order-summary">
                         <div class="summary-row">
@@ -143,11 +278,10 @@
             </div>
         </section>
 
-        <!-- Tracking Info (example) -->
+        <!-- Tracking Info -->
         {% if order.status in ['processing', 'shipped'] %}
         <section class="tracking-info">
             <h2>Thông tin vận chuyển</h2>
-
             <div class="info-card">
                 <div class="tracking-timeline">
                     <div class="timeline-item {% if order.status in ['processing', 'shipped', 'delivered'] %}active{% endif %}">
@@ -158,7 +292,6 @@
                             <div class="timeline-date">{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
                         </div>
                     </div>
-
                     <div class="timeline-item {% if order.status in ['processing', 'shipped', 'delivered'] %}active{% endif %}">
                         <div class="timeline-icon"><i class="fas fa-box"></i></div>
                         <div class="timeline-content">
@@ -167,7 +300,6 @@
                             <div class="timeline-date">{{ (order.created_at + timedelta(hours=2)).strftime('%d/%m/%Y %H:%M') }}</div>
                         </div>
                     </div>
-
                     <div class="timeline-item {% if order.status in ['shipped', 'delivered'] %}active{% endif %}">
                         <div class="timeline-icon"><i class="fas fa-shipping-fast"></i></div>
                         <div class="timeline-content">
@@ -178,7 +310,6 @@
                             {% endif %}
                         </div>
                     </div>
-
                     <div class="timeline-item {% if order.status == 'delivered' %}active{% endif %}">
                         <div class="timeline-icon"><i class="fas fa-home"></i></div>
                         <div class="timeline-content">
@@ -196,24 +327,111 @@
 
         <!-- Actions -->
         <section class="order-actions">
-            <a href="{{ url_for('cart.order_history') }}" class="btn btn-secondary">
-                Quay lại đơn hàng
-            </a>
-
+            <a href="{{ url_for('cart.order_history') }}" class="btn btn-secondary">Quay lại đơn hàng</a>
             {% if order.status == 'pending' %}
-            <form action="{{ url_for('cart.cancel_order', order_id=order.id) }}" method="POST" style="display: inline;">
-                <button type="submit" class="btn btn-danger" onclick="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?');">
-                    Hủy đơn hàng
-                </button>
+            <form action="{{ url_for('cart.cancel_order', order_id=order.id) }}" method="POST" style="display: inline;" id="cancelOrderForm">
+                <button type="button" class="btn btn-danger cancel-order-btn">Hủy đơn hàng</button>
             </form>
             {% endif %}
         </section>
+
+        <!-- Chatbot UI -->
+        <div class="chatbot-container" id="chatbotContainer">
+            <button class="chatbot-button" onclick="TechMart.toggleChatbot()">
+                <i class="fas fa-comment-dots"></i>
+            </button>
+            <div class="chatbot-window" id="chatbotWindow">
+                <div class="chatbot-messages" id="chatbotMessages">
+                    <div class="chatbot-message">Chào bạn! TechMart hỗ trợ bạn như thế nào hôm nay?</div>
+                </div>
+                <div class="chatbot-input">
+                    <input type="text" id="chatbotInput" placeholder="Nhập tin nhắn...">
+                    <button onclick="TechMart.sendChatbotMessage()">Gửi</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+{{ super() }}
 <script>
-    // JavaScript không còn cần thiết vì đã thay bằng form
+    const TechMart = {};
+
+    TechMart.toggleDropdown = function() {
+        try {
+            const dropdown = document.querySelector('.dropdown');
+            const dropdownMenu = dropdown ? dropdown.querySelector('.dropdown-menu') : null;
+            if (dropdownMenu) {
+                dropdownMenu.classList.toggle('active');
+            }
+        } catch (error) {
+            console.error('TechMart: Lỗi khi toggle dropdown:', error);
+        }
+    };
+
+    TechMart.toggleChatbot = function() {
+        try {
+            const chatbotContainer = document.getElementById('chatbotContainer');
+            const chatbotWindow = document.getElementById('chatbotWindow');
+            if (chatbotContainer && chatbotWindow) {
+                chatbotContainer.classList.toggle('active');
+                chatbotWindow.classList.toggle('active');
+            }
+        } catch (error) {
+            console.error('TechMart: Lỗi khi toggle chatbot:', error);
+        }
+    };
+
+    TechMart.sendChatbotMessage = function() {
+        try {
+            const input = document.getElementById('chatbotInput');
+            const messages = document.getElementById('chatbotMessages');
+            if (input && messages && input.value.trim()) {
+                const userMessage = document.createElement('div');
+                userMessage.className = 'chatbot-message user-message';
+                userMessage.textContent = input.value;
+                messages.appendChild(userMessage);
+                const botMessage = document.createElement('div');
+                botMessage.className = 'chatbot-message';
+                botMessage.textContent = 'Cảm ơn tin nhắn của bạn! Chúng tôi sẽ phản hồi sớm.';
+                messages.appendChild(botMessage);
+                messages.scrollTop = messages.scrollHeight;
+                input.value = '';
+            }
+        } catch (error) {
+            console.error('TechMart: Lỗi khi gửi tin nhắn chatbot:', error);
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdownToggle = document.querySelector('.dropdown-toggle');
+        if (dropdownToggle) {
+            dropdownToggle.addEventListener('click', TechMart.toggleDropdown);
+        }
+        document.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.dropdown');
+            if (dropdown && !dropdown.contains(event.target)) {
+                const dropdownMenu = dropdown.querySelector('.dropdown-menu');
+                if (dropdownMenu) {
+                    dropdownMenu.classList.remove('active');
+                }
+            }
+        });
+
+        // Xử lý nút hủy đơn hàng
+        const cancelButton = document.querySelector('.cancel-order-btn');
+        if (cancelButton) {
+            cancelButton.addEventListener('click', function() {
+                if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) {
+                    const form = document.getElementById('cancelOrderForm');
+                    if (form) {
+                        form.submit();
+                    }
+                }
+            });
+        }
+    });
 </script>
 {% endblock %}

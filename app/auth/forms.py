@@ -46,3 +46,18 @@ class RegisterForm(FlaskForm):
         user = User.query.filter_by(email=email.data).first()
         if user:
             raise ValidationError('Email đã được sử dụng. Vui lòng sử dụng email khác.')
+
+
+class ChangePasswordForm(FlaskForm):
+    current_password = PasswordField('Mật khẩu hiện tại', validators=[
+        DataRequired(message='Trường này là bắt buộc')
+    ])
+    new_password = PasswordField('Mật khẩu mới', validators=[
+        DataRequired(message='Trường này là bắt buộc'),
+        Length(min=8, message='Mật khẩu mới phải có ít nhất 8 ký tự')
+    ])
+    confirm_password = PasswordField('Xác nhận mật khẩu mới', validators=[
+        DataRequired(message='Trường này là bắt buộc'),
+        EqualTo('new_password', message='Mật khẩu xác nhận không khớp')
+    ])
+    submit = SubmitField('Đổi mật khẩu')

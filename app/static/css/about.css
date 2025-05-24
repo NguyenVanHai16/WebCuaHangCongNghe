@@ -1,0 +1,87 @@
+/* About Page Styles */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 0;
+    background: transparent; /* Match layout.css */
+}
+
+/* About Content */
+.about-content {
+    background: var(--light-color); /* Use light color */
+    border-radius: var(--card-border-radius); /* Use card border radius */
+    box-shadow: var(--shadow-md); /* Use shadow-md */
+    padding: 2rem;
+}
+
+/* Main Heading */
+.container h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--dark-color); /* Use dark color */
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+/* About Section */
+.about-section {
+    margin-bottom: 2rem;
+}
+
+.about-section h2 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--dark-color); /* Use dark color */
+    margin-bottom: 1rem;
+}
+
+.about-section p {
+    font-size: 0.9rem;
+    color: var(--gray-color); /* Use gray color */
+    line-height: 1.6;
+    margin-bottom: 0.75rem;
+}
+
+.about-section ul {
+    list-style: none;
+    padding-left: 1.5rem;
+}
+
+.about-section ul li {
+    font-size: 0.9rem;
+    color: var(--gray-color); /* Use gray color */
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
+.about-section ul li:before {
+    content: '\f058'; /* Font Awesome check-circle icon */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    color: var(--primary-color); /* Use primary color */
+    position: absolute;
+    left: -1.5rem;
+    top: 0.2rem;
+    font-size: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .about-content {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .about-content {
+        margin: 0 1rem;
+    }
+
+    .container h1 {
+        font-size: 1.8rem;
+    }
+
+    .about-section h2 {
+        font-size: 1.5rem;
+    }
+}

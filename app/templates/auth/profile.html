@@ -1,209 +1,192 @@
 {% extends "layout.html" %}
 
-{% block title %}Thông tin tài khoản - TechMart{% endblock %}
-
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{{ super() }}
+<link rel="stylesheet" href="/static/css/profile.css">
 {% endblock %}
 
 {% block content %}
-<div class="container" style="padding: 2rem 0;">
-    <h1>Thông tin tài khoản</h1>
+<div class="container profile-container">
+    <h1 class="profile-title">Thông tin tài khoản</h1>
 
-    <div class="profile-container">
-        <!-- Account Info Card -->
-        <div class="account-info">
-            <div class="card account-card">
-                <div class="card-header">
-                    <h2>Thông tin cá nhân</h2>
-                    <button class="edit-btn" id="toggleEditForm"><i class="fas fa-pencil-alt"></i> Chỉnh sửa</button>
-                </div>
+    <div class="account-info">
+        <div class="card">
+            <div class="card-header">
+                <h2>Thông tin cá nhân</h2>
+                <button class="btn btn-outline edit-btn" data-toggle="personal-info">Chỉnh sửa</button>
+            </div>
 
-                <div class="user-info" id="userInfoDisplay">
-                    <div class="avatar-container">
-                        <!-- Thay thế div avatar bằng img để hiển thị ảnh người dùng -->
-                        <img id="userAvatar" class="avatar" src="{{ current_user.avatar_url if current_user.avatar_url else url_for('static', filename='images/default-avatar.png') }}" alt="User Avatar">
-                        <div class="user-role">
-                            <span class="role-badge">{{ current_user.role }}</span>
+            <div class="card-body">
+                <div class="info-row">
+                    <div class="info-group-column">
+                        <div class="info-group">
+                            <label class="form-label">Tên đăng nhập</label>
+                            <div class="info-value">{{ current_user.username }}</div>
                         </div>
-                        <!-- Thêm nút để tải ảnh lên -->
-                        <div class="avatar-upload">
-                            <label for="avatarInput" class="avatar-upload-btn">
-                                <i class="fas fa-camera"></i> Thêm ảnh
-                            </label>
-                            <input type="file" id="avatarInput" name="avatar" accept="image/*" style="display: none;">
+                        <div class="info-group">
+                            <label class="form-label">Họ và tên</label>
+                            <div class="info-value {% if not (current_user.last_name or current_user.first_name) %}empty-value{% endif %}" data-field="full_name">
+                                {% if current_user.last_name or current_user.first_name %}
+                                    {{ current_user.last_name }} {{ current_user.first_name }}
+                                {% else %}
+                                    Chưa cập nhật
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
-
-                    <div class="info-details">
-                        <div class="info-row">
-                            <div class="info-group">
-                                <label><i class="fas fa-user"></i> Tên đăng nhập</label>
-                                <span class="info-value">{{ current_user.username }}</span>
-                            </div>
-
-                            <div class="info-group">
-                                <label><i class="fas fa-envelope"></i> Email</label>
-                                <span class="info-value">{{ current_user.email }}</span>
-                            </div>
+                    <div class="info-group-column">
+                        <div class="info-group">
+                            <label class="form-label">Email</label>
+                            <div class="info-value" data-field="email">{{ current_user.email }}</div>
                         </div>
-
-                        <div class="info-row">
-                            <div class="info-group">
-                                <label><i class="fas fa-id-card"></i> Họ và tên</label>
-                                <span class="info-value {% if not current_user.last_name and not current_user.first_name %}empty-value{% endif %}">
-                                    {% if current_user.last_name or current_user.first_name %}
-                                        {{ current_user.last_name }} {{ current_user.first_name }}
-                                    {% else %}
-                                        Chưa cập nhật
-                                    {% endif %}
-                                </span>
-                            </div>
-
-                            <div class="info-group">
-                                <label><i class="fas fa-calendar-alt"></i> Ngày tham gia</label>
-                                <span class="info-value">{{ current_user.created_at.strftime('%d/%m/%Y') }}</span>
-                            </div>
+                        <div class="info-group">
+                            <label class="form-label">Ngày tham gia</label>
+                            <div class="info-value">{{ current_user.created_at.strftime('%d/%m/%Y') }}</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Edit Profile Form -->
-                <form id="editProfileForm" style="display: none;" method="post">
+                <form class="edit-form d-none" id="personal-info-form" action="/update-profile" method="POST">
+                    {{ form.csrf_token if form }}
+                    <div class="form-message" id="personal-info-message"></div>
                     <div class="form-group">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" id="email" name="email" class="form-control" value="{{ current_user.email }}" required>
+                        <label class="form-label" for="email">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ current_user.email }}" required>
                     </div>
-
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="last_name" class="form-label">Họ</label>
-                            <input type="text" id="last_name" name="last_name" class="form-control" value="{{ current_user.last_name or '' }}">
+                            <label class="form-label" for="last_name">Họ</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ current_user.last_name }}">
                         </div>
-
                         <div class="form-group">
-                            <label for="first_name" class="form-label">Tên</label>
-                            <input type="text" id="first_name" name="first_name" class="form-control" value="{{ current_user.first_name or '' }}">
+                            <label class="form-label" for="first_name">Tên</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ current_user.first_name }}">
                         </div>
                     </div>
-
                     <div class="form-actions">
-                        <button type="button" class="btn btn-outline" id="cancelEdit">Hủy</button>
+                        <button type="button" class="btn btn-outline cancel-btn" data-toggle="personal-info">Hủy</button>
                         <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
                     </div>
                 </form>
             </div>
-
-            <!-- Change Password Card -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>Đổi mật khẩu</h2>
-                </div>
-                <div class="card-body">
-                    <p>Bạn muốn thay đổi mật khẩu?</p>
-                    <a href="{{ url_for('auth.change_password') }}" class="btn btn-primary">Đổi mật khẩu</a>
-                </div>
-            </div>
         </div>
+    </div>
 
-        <!-- Activity Section -->
-        <div class="activity-section">
-            <div class="card">
-                <div class="card-header">
-                    <h2>Đơn hàng gần đây</h2>
-                    {% if recent_orders %}
-                    <a href="{{ url_for('cart.order_history') }}" class="view-all">Xem tất cả</a>
-                    {% endif %}
-                </div>
+    <div class="activity-section">
+        <div class="card">
+            <div class="card-header">
+                <h2>Địa chỉ giao hàng</h2>
+            </div>
 
-                <div class="recent-orders">
-                    {% if recent_orders %}
-                        {% for order in recent_orders %}
-                        <div class="order-item">
-                            <div class="order-info">
-                                <div class="order-id">Đơn hàng #{{ order.id }}</div>
-                                <div class="order-date">{{ order.created_at.strftime('%d/%m/%Y') }}</div>
-                                <div class="order-total">{{ "{:,.0f}".format(order.total_amount) }} ₫</div>
-                                <div class="order-status">
-                                    <span class="status-badge status-{{ order.status }}">
-                                        {{ get_order_status_label(order.status) }}
-                                    </span>
+            <div class="card-body">
+                {% if addresses %}
+                    {% for address in addresses %}
+                        <div class="address-item" data-address-id="{{ address.id }}">
+                            <div class="info-row">
+                                <div class="info-group-column">
+                                    <div class="info-group">
+                                        <label class="form-label">Họ tên người nhận</label>
+                                        <div class="info-value" data-field="recipient_name">{{ address.recipient_name }}</div>
+                                    </div>
+                                    <div class="info-group">
+                                        <label class="form-label">Số điện thoại</label>
+                                        <div class="info-value" data-field="phone">{{ address.phone }}</div>
+                                    </div>
+                                </div>
+                                <div class="info-group-column">
+                                    <div class="info-group">
+                                        <label class="form-label">Địa chỉ</label>
+                                        <div class="info-value {% if not address.address %}empty-value{% endif %}" data-field="address">
+                                            {% if address.address %}
+                                                {{ address.address }}
+                                            {% else %}
+                                                Chưa cập nhật
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="info-group">
+                                        <label class="form-label">Trạng thái</label>
+                                        <div class="info-value" data-field="is_default">
+                                            {% if address.is_default %}
+                                                <span class="address-default badge">Mặc định</span>
+                                            {% else %}
+                                                Không phải mặc định
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <a href="{{ url_for('cart.order_detail', order_id=order.id) }}" class="btn btn-sm">Chi tiết</a>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="empty-state">
-                            <p>Bạn chưa có đơn hàng nào</p>
-                            <a href="{{ url_for('main.index') }}" class="btn btn-primary">Mua sắm ngay</a>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h2>Địa chỉ giao hàng</h2>
-                </div>
-
-                <div id="addressesContainer">
-                    {% if addresses %}
-                        {% for address in addresses %}
-                        <div class="address-item">
-                            <div class="address-info">
-                                <div class="address-name">{{ address.recipient_name }}</div>
-                                <div class="address-phone">{{ address.phone }}</div>
-                                <div class="address-text">{{ address.address }}</div>
-                                {% if address.is_default %}
-                                <div class="address-default">Mặc định</div>
-                                {% endif %}
-                            </div>
                             <div class="address-actions">
-                                <button class="btn-icon edit-address" data-id="{{ address.id }}"><i class="fas fa-pencil-alt"></i></button>
-                                <button class="btn-icon delete-address" data-id="{{ address.id }}"><i class="fas fa-trash-alt"></i></button>
+                                <button class="btn btn-outline edit-address-btn" data-toggle="edit-address-modal" data-address-id="{{ address.id }}">Chỉnh sửa</button>
+                                <button class="btn btn-outline delete-address-btn" data-address-id="{{ address.id }}">Xóa</button>
                             </div>
                         </div>
-                        {% endfor %}
+                        <!-- Modal cho chỉnh sửa địa chỉ -->
+                        <div class="modal" id="edit-address-modal-{{ address.id }}">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h2>Chỉnh sửa địa chỉ</h2>
+                                    <button class="modal-close">×</button>
+                                </div>
+                                <form class="address-form modal-form edit-address-form" id="edit-address-form-{{ address.id }}" action="/update-address/{{ address.id }}" method="POST">
+                                    {{ form.csrf_token if form }}
+                                    <input type="hidden" name="address_id" value="{{ address.id }}">
+                                    <div class="form-message" id="edit-address-message-{{ address.id }}"></div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="recipient_name_{{ address.id }}">Họ tên người nhận</label>
+                                        <input type="text" class="form-control" id="recipient_name_{{ address.id }}" name="recipient_name" value="{{ address.recipient_name }}" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="phone_{{ address.id }}">Số điện thoại</label>
+                                        <input type="text" class="form-control" id="phone_{{ address.id }}" name="phone" value="{{ address.phone }}" required pattern="^\d{10,11}$" title="Số điện thoại phải có 10 hoặc 11 chữ số">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="address_{{ address.id }}">Địa chỉ chi tiết</label>
+                                        <input type="text" class="form-control" id="address_{{ address.id }}" name="address" value="{{ address.address }}" required>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="is_default_{{ address.id }}" name="is_default" {% if address.is_default %}checked{% endif %}>
+                                        <label class="form-check-label" for="is_default_{{ address.id }}">Đặt làm địa chỉ mặc định</label>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="button" class="btn btn-outline cancel-btn" data-toggle="edit-address-modal" data-address-id="{{ address.id }}">Hủy</button>
+                                        <button type="submit" class="btn btn-primary">Lưu địa chỉ</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <p>Bạn chưa có địa chỉ giao hàng nào</p>
+                    </div>
+                {% endif %}
 
-                        <!-- Thêm nút thêm địa chỉ mới sau danh sách địa chỉ -->
-                        <div class="add-new-address mt-3">
-                            <button class="btn btn-outline-primary btn-sm" id="newAddressBtn">
-                                <i class="fas fa-plus"></i> Thêm địa chỉ mới
-                            </button>
-                        </div>
-                    {% else %}
-                        <div class="empty-state">
-                            <p>Bạn chưa có địa chỉ giao hàng nào</p>
-                            <button class="btn btn-primary" id="emptyAddressBtn">Thêm địa chỉ mới</button>
-                        </div>
-                    {% endif %}
+                <div class="add-new-address">
+                    <button class="btn btn-outline add-address-btn" data-toggle="add-address">Thêm địa chỉ mới</button>
                 </div>
 
-                <!-- Address Form -->
-                <form id="addressForm" style="display: none;" method="post" action="{{ url_for('auth.add_address') }}">
+                <form class="address-form add-address-form d-none" id="add-address-form" action="/add-address" method="POST">
+                    {{ form.csrf_token if form }}
+                    <div class="form-message" id="add-address-message"></div>
                     <div class="form-group">
-                        <label for="recipient_name" class="form-label">Họ tên người nhận</label>
-                        <input type="text" id="recipient_name" name="recipient_name" class="form-control" required>
+                        <label class="form-label" for="recipient_name_add">Họ tên người nhận</label>
+                        <input type="text" class="form-control" id="recipient_name_add" name="recipient_name" required>
                     </div>
-
                     <div class="form-group">
-                        <label for="phone" class="form-label">Số điện thoại</label>
-                        <input type="tel" id="phone" name="phone" class="form-control" required>
+                        <label class="form-label" for="phone_add">Số điện thoại</label>
+                        <input type="text" class="form-control" id="phone_add" name="phone" required pattern="^\d{10,11}$" title="Số điện thoại phải có 10 hoặc 11 chữ số">
                     </div>
-
                     <div class="form-group">
-                        <label for="address" class="form-label">Địa chỉ chi tiết</label>
-                        <textarea id="address" name="address" class="form-control" rows="3" required></textarea>
+                        <label class="form-label" for="address_add">Địa chỉ chi tiết</label>
+                        <input type="text" class="form-control" id="address_add" name="address" required>
                     </div>
-
                     <div class="form-check">
-                        <input type="checkbox" id="is_default" name="is_default" class="form-check-input">
-                        <label for="is_default" class="form-check-label">Đặt làm địa chỉ mặc định</label>
+                        <input type="checkbox" class="form-check-input" id="is_default_add" name="is_default">
+                        <label class="form-check-label" for="is_default_add">Đặt làm địa chỉ mặc định</label>
                     </div>
-
                     <div class="form-actions">
-                        <button type="button" class="btn btn-outline" id="cancelAddressForm">Hủy</button>
+                        <button type="button" class="btn btn-outline cancel-btn" data-toggle="add-address">Hủy</button>
                         <button type="submit" class="btn btn-primary">Lưu địa chỉ</button>
                     </div>
                 </form>
@@ -214,91 +197,432 @@
 {% endblock %}
 
 {% block scripts %}
+{{ super() }}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Profile editing
-        const toggleEditBtn = document.getElementById('toggleEditForm');
-        const userInfoDisplay = document.getElementById('userInfoDisplay');
-        const editProfileForm = document.getElementById('editProfileForm');
-        const cancelEditBtn = document.getElementById('cancelEdit');
-
-        if (toggleEditBtn && userInfoDisplay && editProfileForm && cancelEditBtn) {
-            toggleEditBtn.addEventListener('click', function() {
-                userInfoDisplay.style.display = 'none';
-                editProfileForm.style.display = 'block';
-            });
-
-            cancelEditBtn.addEventListener('click', function() {
-                editProfileForm.style.display = 'none';
-                userInfoDisplay.style.display = 'flex';
-            });
-        }
-
-        // Avatar upload preview
-        const avatarInput = document.getElementById('avatarInput');
-        const userAvatar = document.getElementById('userAvatar');
-
-        if (avatarInput && userAvatar) {
-            avatarInput.addEventListener('change', function(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        userAvatar.src = e.target.result; // Hiển thị ảnh mới ngay lập tức
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
-
-        // Address management
-        const addressForm = document.getElementById('addressForm');
-        const addressesContainer = document.getElementById('addressesContainer');
-        const cancelAddressBtn = document.getElementById('cancelAddressForm');
-        const emptyAddressBtn = document.getElementById('emptyAddressBtn');
-        const newAddressBtn = document.getElementById('newAddressBtn');
-
-        function showAddressForm() {
-            addressForm.style.display = 'block';
-            addressesContainer.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function hideAddressForm() {
-            addressForm.style.display = 'none';
-            addressForm.reset(); // Reset form về trạng thái ban đầu
-        }
-
-        if (emptyAddressBtn) {
-            emptyAddressBtn.addEventListener('click', showAddressForm);
-        }
-
-        if (newAddressBtn) {
-            newAddressBtn.addEventListener('click', showAddressForm);
-        }
-
-        if (cancelAddressBtn) {
-            cancelAddressBtn.addEventListener('click', function() {
-                hideAddressForm(); // Ẩn form khi nhấn "Hủy"
-            });
-        }
-
-        const editAddressBtns = document.querySelectorAll('.edit-address');
-        editAddressBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const addressId = this.getAttribute('data-id');
-                alert('Tính năng chỉnh sửa địa chỉ sẽ được cập nhật trong phiên bản tới!');
-            });
+document.addEventListener('DOMContentLoaded', () => {
+    // Hàm ẩn tất cả form và modal
+    function hideAllAddressForms() {
+        document.querySelectorAll('.address-form').forEach(form => {
+            form.classList.add('d-none');
         });
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.classList.remove('show');
+        });
+        document.getElementById('add-address-message').textContent = '';
+    }
 
-        const deleteAddressBtns = document.querySelectorAll('.delete-address');
-        deleteAddressBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const addressId = this.getAttribute('data-id');
-                if (confirm('Bạn có chắc chắn muốn xóa địa chỉ này?')) {
-                    alert('Tính năng xóa địa chỉ sẽ được cập nhật trong phiên bản tới!');
-                }
-            });
+    // Xử lý nút "Thêm địa chỉ mới"
+    document.querySelector('.add-address-btn').addEventListener('click', () => {
+        hideAllAddressForms();
+        const addForm = document.getElementById('add-address-form');
+        addForm.classList.remove('d-none');
+        addForm.reset();
+        addForm.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Xử lý nút "Chỉnh sửa" cho từng địa chỉ (hiển thị modal)
+    document.querySelectorAll('.edit-address-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            hideAllAddressForms();
+            const addressId = btn.dataset.addressId;
+            const modal = document.getElementById(`edit-address-modal-${addressId}`);
+            modal.classList.add('show');
         });
     });
+
+    // Xử lý nút "Hủy" và nút đóng modal cho địa chỉ
+    document.querySelectorAll('.cancel-btn, .modal-close').forEach(btn => {
+        btn.addEventListener('click', () => {
+            hideAllAddressForms();
+            const addressId = btn.dataset.addressId;
+            if (addressId) {
+                const messageDiv = document.getElementById(`edit-address-message-${addressId}`);
+                if (messageDiv) messageDiv.textContent = '';
+            }
+        });
+    });
+
+    // Xử lý gửi form chỉnh sửa địa chỉ (AJAX)
+    document.querySelectorAll('.edit-address-form').forEach(form => {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const addressId = form.querySelector('input[name="address_id"]').value;
+            const messageDiv = document.getElementById(`edit-address-message-${addressId}`);
+            const formData = new FormData(form);
+
+            // Kiểm tra dữ liệu phía client
+            const recipientName = formData.get('recipient_name').trim();
+            const phone = formData.get('phone').trim();
+            const addressText = formData.get('address').trim();
+
+            if (!recipientName || !phone || !addressText) {
+                messageDiv.textContent = 'Vui lòng điền đầy đủ các trường bắt buộc.';
+                messageDiv.className = 'form-message error';
+                return;
+            }
+
+            if (!/^\d{10,11}$/.test(phone)) {
+                messageDiv.textContent = 'Số điện thoại phải có 10 hoặc 11 chữ số.';
+                messageDiv.className = 'form-message error';
+                return;
+            }
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-Token': document.querySelector('input[name="csrf_token"]')?.value
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Phản hồi từ server:', result); // Log để debug
+
+                if (response.ok && result.success) {
+                    messageDiv.textContent = 'Cập nhật địa chỉ thành công!';
+                    messageDiv.className = 'form-message success';
+
+                    // Cập nhật giao diện
+                    const addressItem = document.querySelector(`.address-item[data-address-id="${addressId}"]`);
+                    if (!addressItem) {
+                        console.error(`Không tìm thấy address-item với ID: ${addressId}`);
+                        return;
+                    }
+
+                    const recipientNameField = addressItem.querySelector('.info-value[data-field="recipient_name"]');
+                    const phoneField = addressItem.querySelector('.info-value[data-field="phone"]');
+                    const addressField = addressItem.querySelector('.info-value[data-field="address"]');
+                    const isDefaultField = addressItem.querySelector('.info-value[data-field="is_default"]');
+
+                    if (!recipientNameField || !phoneField || !addressField || !isDefaultField) {
+                        console.error('Không tìm thấy các phần tử info-value để cập nhật');
+                        return;
+                    }
+
+                    recipientNameField.textContent = recipientName;
+                    phoneField.textContent = phone;
+                    if (addressText) {
+                        addressField.textContent = addressText;
+                        addressField.classList.remove('empty-value');
+                    } else {
+                        addressField.textContent = 'Chưa cập nhật';
+                        addressField.classList.add('empty-value');
+                    }
+                    isDefaultField.innerHTML = formData.get('is_default') ? '<span class="address-default badge">Mặc định</span>' : 'Không phải mặc định';
+
+                    // Đóng modal sau khi cập nhật thành công
+                    setTimeout(() => {
+                        hideAllAddressForms();
+                        messageDiv.textContent = '';
+                    }, 2000);
+                } else {
+                    messageDiv.textContent = result.error || 'Cập nhật địa chỉ thất bại. Vui lòng thử lại.';
+                    messageDiv.className = 'form-message error';
+                }
+            } catch (error) {
+                console.error('Lỗi khi cập nhật địa chỉ:', error);
+                messageDiv.textContent = 'Có lỗi xảy ra. Vui lòng thử lại sau.';
+                messageDiv.className = 'form-message error';
+            }
+        });
+    });
+
+    // Xử lý nút "Xóa địa chỉ"
+    document.querySelectorAll('.delete-address-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (confirm('Bạn có chắc muốn xóa địa chỉ này?')) {
+                const addressId = btn.dataset.addressId;
+                try {
+                    const response = await fetch(`/delete-address/${addressId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-Token': document.querySelector('input[name="csrf_token"]')?.value
+                        }
+                    });
+                    if (response.ok) {
+                        const addressItem = btn.closest('.address-item');
+                        const modal = document.getElementById(`edit-address-modal-${addressId}`);
+                        addressItem.remove();
+                        if (modal) modal.remove();
+                        if (!document.querySelectorAll('.address-item').length) {
+                            const emptyState = document.querySelector('.empty-state') || document.createElement('div');
+                            emptyState.className = 'empty-state';
+                            emptyState.innerHTML = '<p>Bạn chưa có địa chỉ giao hàng nào</p>';
+                            const cardBody = document.querySelector('.card-body');
+                            cardBody.insertBefore(emptyState, document.querySelector('.add-new-address'));
+                        }
+                    } else {
+                        alert('Xóa địa chỉ thất bại. Vui lòng thử lại.');
+                    }
+                } catch (error) {
+                    console.error('Lỗi khi xóa địa chỉ:', error);
+                    alert('Có lỗi xảy ra. Vui lòng thử lại.');
+                }
+            }
+        });
+    });
+
+    // Xử lý nút "Chỉnh sửa" và "Hủy" cho form thông tin cá nhân
+    document.querySelectorAll('[data-toggle="personal-info"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const form = document.getElementById('personal-info-form');
+            const infoRows = form.closest('.card-body').querySelectorAll('.info-row');
+            form.classList.toggle('d-none');
+            infoRows.forEach(row => row.classList.toggle('d-none'));
+            document.getElementById('personal-info-message').textContent = '';
+        });
+    });
+
+    // Xử lý gửi form thông tin cá nhân (AJAX)
+    document.getElementById('personal-info-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const messageDiv = document.getElementById('personal-info-message');
+        const formData = new FormData(form);
+
+        // Kiểm tra dữ liệu phía client
+        const email = formData.get('email').trim();
+        if (!email) {
+            messageDiv.textContent = 'Vui lòng điền email.';
+            messageDiv.className = 'form-message error';
+            return;
+        }
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-Token': document.querySelector('input[name="csrf_token"]')?.value
+                }
+            });
+            const result = await response.json();
+
+            if (response.ok) {
+                messageDiv.textContent = 'Cập nhật thông tin thành công!';
+                messageDiv.className = 'form-message success';
+
+                // Cập nhật giao diện
+                const emailField = document.querySelector('.info-value[data-field="email"]');
+                const fullNameField = document.querySelector('.info-value[data-field="full_name"]');
+                const firstName = formData.get('first_name').trim();
+                const lastName = formData.get('last_name').trim();
+
+                emailField.textContent = email;
+                if (firstName || lastName) {
+                    fullNameField.textContent = `${lastName} ${firstName}`.trim();
+                    fullNameField.classList.remove('empty-value');
+                } else {
+                    fullNameField.textContent = 'Chưa cập nhật';
+                    fullNameField.classList.add('empty-value');
+                }
+
+                // Ẩn form và hiện thông tin
+                form.classList.add('d-none');
+                const infoRows = form.closest('.card-body').querySelectorAll('.info-row');
+                infoRows.forEach(row => row.classList.remove('d-none'));
+                setTimeout(() => messageDiv.textContent = '', 2000);
+            } else {
+                messageDiv.textContent = result.error || 'Cập nhật thông tin thất bại. Vui lòng thử lại.';
+                messageDiv.className = 'form-message error';
+            }
+        } catch (error) {
+            console.error('Lỗi khi cập nhật thông tin:', error);
+            messageDiv.textContent = 'Có lỗi xảy ra. Vui lòng thử lại sau.';
+            messageDiv.className = 'form-message error';
+        }
+    });
+
+    // Xử lý gửi form thêm địa chỉ (AJAX)
+    document.getElementById('add-address-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const messageDiv = document.getElementById('add-address-message');
+        const formData = new FormData(form);
+
+        // Kiểm tra dữ liệu phía client
+        const recipientName = formData.get('recipient_name').trim();
+        const phone = formData.get('phone').trim();
+        const address = formData.get('address').trim();
+
+        if (!recipientName || !phone || !address) {
+            messageDiv.textContent = 'Vui lòng điền đầy đủ các trường bắt buộc.';
+            messageDiv.className = 'form-message error';
+            return;
+        }
+
+        if (!/^\d{10,11}$/.test(phone)) {
+            messageDiv.textContent = 'Số điện thoại phải có 10 hoặc 11 chữ số.';
+            messageDiv.className = 'form-message error';
+            return;
+        }
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-Token': document.querySelector('input[name="csrf_token"]')?.value
+                }
+            });
+            const result = await response.json();
+
+            if (response.ok) {
+                messageDiv.textContent = 'Thêm địa chỉ thành công!';
+                messageDiv.className = 'form-message success';
+
+                // Thêm địa chỉ mới vào danh sách
+                const addressList = document.querySelector('.card-body');
+                const emptyState = document.querySelector('.empty-state');
+                if (emptyState) emptyState.remove();
+
+                const newAddressId = result.address_id || Date.now();
+                const newAddressItem = document.createElement('div');
+                newAddressItem.className = 'address-item';
+                newAddressItem.dataset.addressId = newAddressId;
+                newAddressItem.innerHTML = `
+                    <div class="info-row">
+                        <div class="info-group-column">
+                            <div class="info-group">
+                                <label class="form-label">Họ tên người nhận</label>
+                                <div class="info-value" data-field="recipient_name">${recipientName}</div>
+                            </div>
+                            <div class="info-group">
+                                <label class="form-label">Số điện thoại</label>
+                                <div class="info-value" data-field="phone">${phone}</div>
+                            </div>
+                        </div>
+                        <div class="info-group-column">
+                            <div class="info-group">
+                                <label class="form-label">Địa chỉ</label>
+                                <div class="info-value" data-field="address">${address}</div>
+                            </div>
+                            <div class="info-group">
+                                <label class="form-label">Trạng thái</label>
+                                <div class="info-value" data-field="is_default">
+                                    ${formData.get('is_default') ? '<span class="address-default badge">Mặc định</span>' : 'Không phải mặc định'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="address-actions">
+                        <button class="btn btn-outline edit-address-btn" data-toggle="edit-address-modal" data-address-id="${newAddressId}">Chỉnh sửa</button>
+                        <button class="btn btn-outline delete-address-btn" data-address-id="${newAddressId}">Xóa</button>
+                    </div>
+                `;
+
+                // Thêm modal chỉnh sửa cho địa chỉ mới
+                const newModal = document.createElement('div');
+                newModal.className = 'modal';
+                newModal.id = `edit-address-modal-${newAddressId}`;
+                newModal.innerHTML = `
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>Chỉnh sửa địa chỉ</h2>
+                            <button class="modal-close">×</button>
+                        </div>
+                        <form class="address-form modal-form edit-address-form" id="edit-address-form-${newAddressId}" action="/update-address/${newAddressId}" method="POST">
+                            <input type="hidden" name="csrf_token" value="${document.querySelector('input[name="csrf_token"]')?.value}">
+                            <input type="hidden" name="address_id" value="${newAddressId}">
+                            <div class="form-message" id="edit-address-message-${newAddressId}"></div>
+                            <div class="form-group">
+                                <label class="form-label" for="recipient_name_${newAddressId}">Họ tên người nhận</label>
+                                <input type="text" class="form-control" id="recipient_name_${newAddressId}" name="recipient_name" value="${recipientName}" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="phone_${newAddressId}">Số điện thoại</label>
+                                <input type="text" class="form-control" id="phone_${newAddressId}" name="phone" value="${phone}" required pattern="^\\d{10,11}$" title="Số điện thoại phải có 10 hoặc 11 chữ số">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="address_${newAddressId}">Địa chỉ chi tiết</label>
+                                <input type="text" class="form-control" id="address_${newAddressId}" name="address" value="${address}" required>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="is_default_${newAddressId}" name="is_default" ${formData.get('is_default') ? 'checked' : ''}>
+                                <label class="form-check-label" for="is_default_${newAddressId}">Đặt làm địa chỉ mặc định</label>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-outline cancel-btn" data-toggle="edit-address-modal" data-address-id="${newAddressId}">Hủy</button>
+                                <button type="submit" class="btn btn-primary">Lưu địa chỉ</button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+
+                // Chèn phần tử mới một cách an toàn
+                const referenceNode = document.querySelector('.add-new-address');
+                if (referenceNode && addressList.contains(referenceNode)) {
+                    addressList.insertBefore(newAddressItem, referenceNode);
+                    addressList.insertBefore(newModal, referenceNode);
+                } else {
+                    addressList.appendChild(newAddressItem);
+                    addressList.appendChild(newModal);
+                }
+
+                // Gắn lại sự kiện cho các nút mới
+                newAddressItem.querySelector('.edit-address-btn').addEventListener('click', () => {
+                    hideAllAddressForms();
+                    const modal = document.getElementById(`edit-address-modal-${newAddressId}`);
+                    modal.classList.add('show');
+                });
+
+                newAddressItem.querySelector('.delete-address-btn').addEventListener('click', async () => {
+                    if (confirm('Bạn có chắc muốn xóa địa chỉ này?')) {
+                        try {
+                            const response = await fetch(`/delete-address/${newAddressId}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-Token': document.querySelector('input[name="csrf_token"]')?.value
+                                }
+                            });
+                            if (response.ok) {
+                                newAddressItem.remove();
+                                newModal.remove();
+                                if (!document.querySelectorAll('.address-item').length) {
+                                    const emptyState = document.createElement('div');
+                                    emptyState.className = 'empty-state';
+                                    emptyState.innerHTML = '<p>Bạn chưa có địa chỉ giao hàng nào</p>';
+                                    addressList.insertBefore(emptyState, document.querySelector('.add-new-address'));
+                                }
+                            } else {
+                                alert('Xóa địa chỉ thất bại. Vui lòng thử lại.');
+                            }
+                        } catch (error) {
+                            console.error('Lỗi khi xóa địa chỉ:', error);
+                            alert('Có lỗi xảy ra. Vui lòng thử lại.');
+                        }
+                    }
+                });
+
+                newModal.querySelectorAll('.cancel-btn, .modal-close').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        hideAllAddressForms();
+                        const messageDiv = document.getElementById(`edit-address-message-${newAddressId}`);
+                        if (messageDiv) messageDiv.textContent = '';
+                    });
+                });
+
+                // Đặt lại form và ẩn
+                form.reset();
+                setTimeout(() => hideAllAddressForms(), 2000);
+            } else if (response.status === 404) {
+                messageDiv.textContent = 'Không tìm thấy dịch vụ. Vui lòng kiểm tra cấu hình server.';
+                messageDiv.className = 'form-message error';
+            } else {
+                messageDiv.textContent = result.error || 'Thêm địa chỉ thất bại. Vui lòng thử lại.';
+                messageDiv.className = 'form-message error';
+            }
+        } catch (error) {
+            console.error('Lỗi khi thêm địa chỉ:', error);
+            messageDiv.textContent = 'Có lỗi xảy ra. Vui lòng thử lại sau.';
+            messageDiv.className = 'form-message error';
+        }
+    });
+});
 </script>
 {% endblock %}

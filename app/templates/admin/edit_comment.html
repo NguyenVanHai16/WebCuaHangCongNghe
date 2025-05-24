@@ -2,36 +2,80 @@
 
 {% block title %}Chỉnh sửa bình luận - TechMart{% endblock %}
 
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 20px;
+        background: var(--light-color);
+        border-radius: var(--card-border-radius);
+        box-shadow: var(--shadow-sm);
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group label {
+        font-weight: 600;
+        color: var(--dark-color);
+        margin-bottom: 5px;
+        display: block;
+    }
+    .form-group textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--gray-color);
+        border-radius: var(--card-border-radius);
+        font-size: 0.9rem;
+        background: var(--light-color);
+        resize: vertical;
+        min-height: 100px;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .form-group textarea:focus {
+        border-color: var(--primary-color);
+        box-shadow: var(--shadow-glow);
+        outline: none;
+    }
+    .info-group {
+        margin-bottom: 10px;
+    }
+    .info-group strong {
+        color: var(--dark-color);
+    }
+    .btn-container {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container my-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="text-center mb-0">Chỉnh sửa bình luận</h2>
-                </div>
-                <div class="card-body">
-                    <form method="POST">
-                        <div class="form-group mb-3">
-                            <label for="content">Nội dung bình luận</label>
-                            <textarea class="form-control" id="content" name="content" rows="5" required>{{ comment.content }}</textarea>
-                        </div>
-                        <div class="mb-3">
-                            <p><strong>Người bình luận:</strong> {{ comment.user.username if comment.user else 'N/A' }}</p>
-                            <p><strong>Sản phẩm:</strong> {{ comment.product.name if comment.product else 'N/A' }}</p>
-                            <p><strong>Thời gian:</strong> {{ comment.timestamp.strftime('%d-%m-%Y %H:%M') if comment.timestamp else 'N/A' }}</p>
-                            {% if comment.score %}
-                            <p><strong>Đánh giá:</strong> {{ comment.score }} sao</p>
-                            {% endif %}
-                        </div>
-                        <div class="text-center">
-                            <button type="submit" class="btn btn-primary">Cập nhật</button>
-                            <a href="{{ url_for('admin.list_products') }}" class="btn btn-secondary">Hủy</a>
-                        </div>
-                    </form>
-                </div>
+<div class="container">
+    <div class="form-container">
+        <h2>Chỉnh sửa bình luận</h2>
+        <form method="POST">
+            <div class="form-group">
+                <label for="content">Nội dung bình luận</label>
+                <textarea class="form-control" id="content" name="content" rows="5" required>{{ comment.content }}</textarea>
             </div>
-        </div>
+            <div class="info-group">
+                <p><strong>Người bình luận:</strong> {{ comment.user.username if comment.user else 'N/A' }}</p>
+                <p><strong>Sản phẩm:</strong> {{ comment.product.name if comment.product else 'N/A' }}</p>
+                <p><strong>Thời gian:</strong> {{ comment.timestamp.strftime('%d-%m-%Y %H:%M') if comment.timestamp else 'N/A' }}</p>
+                {% if comment.score %}
+                <p><strong>Đánh giá:</strong> {{ comment.score }} sao</p>
+                {% endif %}
+            </div>
+            <div class="btn-container">
+                <button type="submit" class="btn btn-primary">Cập nhật</button>
+                <a href="{{ url_for('admin.list_products', tab='comments') }}" class="btn btn-secondary">Hủy</a>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}

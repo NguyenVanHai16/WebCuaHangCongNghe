@@ -1,83 +1,261 @@
 {% extends "layout.html" %}
 
-{% block title %}TechMart - Cửa hàng công nghệ hàng đầu Việt Nam{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQ42yqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQAT6Vce1cwx4OnYxZvev5UMQz6vJJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
 <section class="hero">
     <div class="hero-container">
-        <div class="hero-content">
-            <h1>Công nghệ đỉnh cao<br>Trải nghiệm hoàn hảo</h1>
-            <p>TechMart - Địa chỉ tin cậy cho laptop, điện thoại, chuột, bàn phím và tai nghe với giá tốt nhất và dịch vụ chuyên nghiệp.</p>
-            <a href="{{ url_for('products.all_products') }}" class="btn btn-primary">Mua sắm ngay</a>
+        <div class="hero-content-box">
+            <h1>Khám phá công nghệ mới</h1>
+            <p>Tìm kiếm các sản phẩm công nghệ hiện đại với giá cả hợp lý tại TechMart.</p>
         </div>
     </div>
 </section>
 
-<!-- Sản phẩm mới -->
 <section class="products-section">
-    <div class="container">
-        <h2 class="section-title">Sản phẩm mới</h2>
-        <div class="product-grid">
+    <h2 class="section-title">Sản phẩm mới</h2>
+    <div class="product-grid">
+        {% if new_products and new_products|length > 0 %}
             {% for product in new_products %}
             <div class="product-card">
-                <div class="product-image">
-                    <img src="{{ product.image }}" alt="{{ product.name }}">
+                <div class="label-container">
+                    {% if product.is_new %}
+                        <span class="new-label">Mới</span>
+                    {% endif %}
                 </div>
-                <div class="product-details">
-                    <h3 class="product-title">{{ product.name }}</h3>
-                    <p class="product-price">{{ '{:,.0f}'.format(product.price|float) }} VNĐ</p>
-                    <a href="{{ url_for('products.product_detail', product_id=product.id) }}" class="btn btn-details">Xem chi tiết</a>
+                <a href="{{ url_for('products.product_detail', product_id=product.id) }}" class="product-card-link">
+                    <div class="product-image">
+                        {% if product.image %}
+                        <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" onerror="this.src='{{ url_for('static', filename='Uploads/sanpham/default.jpg') }}'">
+                        {% else %}
+                        <img src="{{ url_for('static', filename='Uploads/sanpham/default.jpg') }}" alt="{{ product.name }}">
+                        {% endif %}
+                    </div>
+                    <div class="product-details">
+                        <h3 class="product-title">{{ product.name }}</h3>
+                        {% if product.price is not none and product.discounted_price is not none and product.price|float > product.discounted_price|float %}
+                        <div class="product-price">
+                            <div class="price-stack">
+                                <span class="original-price">{{ '{:,.0f}'.format(product.price|float) }} VNĐ</span>
+                                <span class="discounted-price">{{ '{:,.0f}'.format(product.discounted_price|float) }} VNĐ</span>
+                            </div>
+                        </div>
+                        {% elif product.price is not none and product.price|float > 0 %}
+                        <div class="product-price">
+                            <span class="normal-price">{{ '{:,.0f}'.format(product.price|float) }} VNĐ</span>
+                        </div>
+                        {% else %}
+                        <div class="product-price">Giá không khả dụng</div>
+                        {% endif %}
+                    </div>
+                </a>
+                <div class="product-meta">
+                    <div class="product-rating">
+                        {% set rating = product.rating | float | default(5) %}
+                        {% set full_stars = rating | round(0, 'floor') | int %}
+                        {% for i in range(5) %}
+                        <span class="star {% if i < full_stars %}filled{% else %}empty{% endif %}">★</span>
+                        {% endfor %}
+                    </div>
+                    <button class="like-button {% if product.is_liked %}liked{% endif %}" data-product-id="{{ product.id }}" title="Yêu thích">
+                        <i class="fas fa-heart"></i>
+                    </button>
                 </div>
             </div>
             {% endfor %}
-        </div>
+        {% else %}
+        <p class="no-products">Không có sản phẩm mới nào để hiển thị.</p>
+        {% endif %}
     </div>
 </section>
 
-<!-- Sản phẩm nổi bật -->
 <section class="products-section">
-    <div class="container">
-        <h2 class="section-title">Sản phẩm nổi bật</h2>
-        <div class="product-grid">
+    <h2 class="section-title">Sản phẩm nổi bật</h2>
+    <div class="product-grid">
+        {% if featured_products and featured_products|length > 0 %}
             {% for product in featured_products %}
             <div class="product-card">
-                <div class="product-image">
-                    <img src="{{ product.image }}" alt="{{ product.name }}">
+                <div class="label-container">
+                    {% if product.is_hot %}
+                        <span class="hot-label">Hot</span>
+                    {% endif %}
+                    {% if product.is_limited %}
+                        <span class="limited-label">Giới hạn</span>
+                    {% endif %}
+                    {% if product.is_bestseller %}
+                        <span class="bestseller-label">Bán chạy</span>
+                    {% endif %}
                 </div>
-                <div class="product-details">
-                    <h3 class="product-title">{{ product.name }}</h3>
-                    <p class="product-price">{{ '{:,.0f}'.format(product.price|float) }} VNĐ</p>
-                    <a href="{{ url_for('products.product_detail', product_id=product.id) }}" class="btn btn-details">Xem chi tiết</a>
+                <a href="{{ url_for('products.product_detail', product_id=product.id) }}" class="product-card-link">
+                    <div class="product-image">
+                        {% if product.image %}
+                        <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" onerror="this.src='{{ url_for('static', filename='Uploads/sanpham/default.jpg') }}'">
+                        {% else %}
+                        <img src="{{ url_for('static', filename='Uploads/sanpham/default.jpg') }}" alt="{{ product.name }}">
+                        {% endif %}
+                    </div>
+                    <div class="product-details">
+                        <h3 class="product-title">{{ product.name }}</h3>
+                        {% if product.price is not none and product.discounted_price is not none and product.price|float > product.discounted_price|float %}
+                        <div class="product-price">
+                            <div class="price-stack">
+                                <span class="original-price">{{ '{:,.0f}'.format(product.price|float) }} VNĐ</span>
+                                <span class="discounted-price">{{ '{:,.0f}'.format(product.discounted_price|float) }} VNĐ</span>
+                            </div>
+                        </div>
+                        {% elif product.price is not none and product.price|float > 0 %}
+                        <div class="product-price">
+                            <span class="normal-price">{{ '{:,.0f}'.format(product.price|float) }} VNĐ</span>
+                        </div>
+                        {% else %}
+                        <div class="product-price">Giá không khả dụng</div>
+                        {% endif %}
+                    </div>
+                </a>
+                <div class="product-meta">
+                    <div class="product-rating">
+                        {% set rating = product.rating | float | default(5) %}
+                        {% set full_stars = rating | round(0, 'floor') | int %}
+                        {% for i in range(5) %}
+                        <span class="star {% if i < full_stars %}filled{% else %}empty{% endif %}">★</span>
+                        {% endfor %}
+                    </div>
+                    <button class="like-button {% if product.is_liked %}liked{% endif %}" data-product-id="{{ product.id }}" title="Yêu thích">
+                        <i class="fas fa-heart"></i>
+                    </button>
                 </div>
             </div>
             {% endfor %}
-        </div>
+        {% else %}
+        <p class="no-products">Không có sản phẩm nổi bật nào để hiển thị.</p>
+        {% endif %}
     </div>
 </section>
 
-<!-- Sản phẩm giảm giá -->
 <section class="products-section">
-    <div class="container">
-        <h2 class="section-title">Sản phẩm giảm giá</h2>
-        <div class="product-grid">
+    <h2 class="section-title">Sản phẩm giảm giá</h2>
+    <div class="product-grid">
+        {% if sale_products and sale_products|length > 0 %}
             {% for product in sale_products %}
             <div class="product-card">
-                <div class="product-image">
-                    <img src="{{ product.image }}" alt="{{ product.name }}">
-                    <span class="product-badge badge-sale">Giảm {{ ((product.price|float - product.discounted_price|float) / product.price|float * 100)|round(0) }}%</span>
+                <div class="label-container">
+                    {% if product.is_sale %}
+                        <span class="sale-label">Sale</span>
+                    {% endif %}
                 </div>
-                <div class="product-details">
-                    <h3 class="product-title">{{ product.name }}</h3>
-                    <p class="product-price">
-                        <span class="current-price">{{ '{:,.0f}'.format(product.discounted_price|float) }} VNĐ</span>
-                        <span class="original-price">{{ '{:,.0f}'.format(product.price|float) }} VNĐ</span>
-                    </p>
-                    <a href="{{ url_for('products.product_detail', product_id=product.id) }}" class="btn btn-details">Xem chi tiết</a>
+                <a href="{{ url_for('products.product_detail', product_id=product.id) }}" class="product-card-link">
+                    <div class="product-image">
+                        {% if product.image %}
+                        <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" onerror="this.src='{{ url_for('static', filename='Uploads/sanpham/default.jpg') }}'">
+                        {% else %}
+                        <img src="{{ url_for('static', filename='Uploads/sanpham/default.jpg') }}" alt="{{ product.name }}">
+                        {% endif %}
+                    </div>
+                    <div class="product-details">
+                        <h3 class="product-title">{{ product.name }}</h3>
+                        {% if product.price is not none and product.discounted_price is not none and product.price|float > product.discounted_price|float %}
+                        <div class="product-price">
+                            <div class="price-stack">
+                                <span class="original-price">{{ '{:,.0f}'.format(product.price|float) }} VNĐ</span>
+                                <span class="discounted-price">{{ '{:,.0f}'.format(product.discounted_price|float) }} VNĐ</span>
+                            </div>
+                        </div>
+                        {% elif product.price is not none and product.price|float > 0 %}
+                        <div class="product-price">
+                            <span class="normal-price">{{ '{:,.0f}'.format(product.price|float) }} VNĐ</span>
+                        </div>
+                        {% else %}
+                        <div class="product-price">Giá không khả dụng</div>
+                        {% endif %}
+                    </div>
+                </a>
+                <div class="product-meta">
+                    <div class="product-rating">
+                        {% set rating = product.rating | float | default(5) %}
+                        {% set full_stars = rating | round(0, 'floor') | int %}
+                        {% for i in range(5) %}
+                        <span class="star {% if i < full_stars %}filled{% else %}empty{% endif %}">★</span>
+                        {% endfor %}
+                    </div>
+                    <button class="like-button {% if product.is_liked %}liked{% endif %}" data-product-id="{{ product.id }}" title="Yêu thích">
+                        <i class="fas fa-heart"></i>
+                    </button>
                 </div>
             </div>
             {% endfor %}
-        </div>
+        {% else %}
+        <p class="no-products">Không có sản phẩm giảm giá nào để hiển thị.</p>
+        {% endif %}
     </div>
 </section>
+
+<!-- JavaScript for Like Button -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle Like Button
+    const likeButtons = document.querySelectorAll('.like-button');
+    likeButtons.forEach(button => {
+        button.addEventListener('click', async function() {
+            const productId = button.getAttribute('data-product-id');
+            if (!productId || isNaN(productId)) {
+                console.error('Invalid product ID:', productId);
+                alert('ID sản phẩm không hợp lệ!');
+                return;
+            }
+            const isLiked = button.classList.contains('liked');
+            const newLikeStatus = !isLiked;
+
+            try {
+                const likeUrl = `/like_product/${productId}`;
+                console.log(`Sending request to: ${likeUrl}`);
+                const response = await fetch(likeUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ liked: newLikeStatus })
+                });
+
+                // Check response content type
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    if (response.status === 401 || response.status === 302) {
+                        alert('Yêu cầu đăng nhập để thích sản phẩm!');
+                        window.location = '/login';
+                        return;
+                    }
+                    throw new Error('Phản hồi không phải JSON: ' + contentType);
+                }
+
+                const data = await response.json();
+
+                if (response.status === 401) {
+                    alert('Yêu cầu đăng nhập!');
+                    window.location = '/login';
+                    return;
+                }
+
+                if (response.status === 404) {
+                    console.error('Endpoint not found:', response.url);
+                    alert('Không tìm thấy endpoint. Vui lòng kiểm tra!');
+                    return;
+                }
+
+                if (data.success) {
+                    button.classList.toggle('liked');
+                } else {
+                    alert('Có lỗi xảy ra: ' + (data.message || 'Không thể thực hiện') + '}');
+                }
+            } catch (error) {
+                console.error('Lỗi:', error);
+                alert(`Lỗi: ${error.message}`);
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

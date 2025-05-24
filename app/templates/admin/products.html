@@ -2,36 +2,162 @@
 
 {% block title %}Quản lý Hệ thống - TechMart{% endblock %}
 
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<style>
+    .custom-tabs {
+        border-bottom: 2px solid var(--gray-color);
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+    }
+    .custom-tab {
+        padding: 10px 20px;
+        color: var(--dark-color);
+        font-weight: 500;
+        cursor: pointer;
+        transition: color 0.3s ease, border-bottom 0.3s ease;
+        border-bottom: 3px solid transparent;
+    }
+    .custom-tab.active {
+        color: var(--primary-color);
+        font-weight: 700;
+        border-bottom: 3px solid var(--primary-color);
+    }
+    .custom-tab:hover {
+        color: var(--primary-color);
+    }
+    .custom-tab-content {
+        display: none;
+    }
+    .custom-tab-content.active {
+        display: block;
+    }
+    .custom-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+    }
+    .custom-modal.active {
+        display: block;
+    }
+    .custom-modal-content {
+        background: var(--light-color);
+        margin: 15% auto;
+        padding: 20px;
+        width: 90%;
+        max-width: 500px;
+        border-radius: var(--card-border-radius);
+        box-shadow: var(--shadow-md);
+    }
+    .custom-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--gray-color);
+        padding-bottom: 10px;
+    }
+    .custom-modal-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--dark-color);
+    }
+    .custom-modal-close {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        color: var(--dark-color);
+    }
+    .custom-modal-body {
+        padding: 20px 0;
+    }
+    .custom-modal-footer {
+        border-top: 1px solid var(--gray-color);
+        padding-top: 10px;
+        text-align: right;
+    }
+    /* Chuẩn hóa kiểu nút với màu pha */
+    .custom-btn, .btn {
+        padding: 8px 16px;
+        border-radius: var(--card-border-radius);
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 100px;
+        height: 36px;
+    }
+    .custom-btn-secondary, .btn-secondary {
+        background: var(--gray-color);
+        color: var(--dark-color);
+    }
+    .custom-btn-secondary:hover, .btn-secondary:hover {
+        background: linear-gradient(135deg, var(--gray-color) 0%, var(--secondary-color) 100%);
+        color: var(--light-color);
+        box-shadow: var(--shadow-glow);
+    }
+    .custom-btn-danger, .btn-danger {
+        background: linear-gradient(135deg, var(--danger-color) 0%, var(--accent-color) 100%);
+        color: var(--light-color);
+    }
+    .custom-btn-danger:hover, .btn-danger:hover {
+        background: linear-gradient(135deg, #e55a5a 0%, var(--accent-color) 100%);
+        box-shadow: var(--shadow-glow);
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+        color: var(--light-color);
+    }
+    .btn-primary:hover {
+        background: linear-gradient(135deg, var(--secondary-color) 0%, var(--accent-color) 100%);
+        box-shadow: var(--shadow-glow);
+    }
+    .btn-warning {
+        background: linear-gradient(135deg, var(--warning-color) 0%, var(--accent-color) 100%);
+        color: var(--dark-color);
+    }
+    .btn-warning:hover {
+        background: linear-gradient(135deg, #e8a418 0%, var(--accent-color) 100%);
+        box-shadow: var(--shadow-glow);
+    }
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        min-width: 80px;
+        height: 32px;
+    }
+    .btn-group {
+        display: flex;
+        gap: 5px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid mt-4">
     <!-- Navigation tabs -->
-    <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="products-tab" data-bs-toggle="tab" data-bs-target="#products" type="button" role="tab">
-                Quản lý Sản phẩm
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button" role="tab">
-                Quản lý Đơn hàng
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
-                Quản lý Người dùng
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab">
-                Quản lý Bình luận
-            </button>
-        </li>
-    </ul>
+    <div class="custom-tabs" id="adminTabs">
+        <div class="custom-tab active" data-tab="products">Quản lý Sản phẩm</div>
+        <div class="custom-tab" data-tab="orders">Quản lý Đơn hàng</div>
+        <div class="custom-tab" data-tab="users">Quản lý Người dùng</div>
+        <div class="custom-tab" data-tab="comments">Quản lý Bình luận</div>
+    </div>
 
     <!-- Tab content -->
-    <div class="tab-content" id="adminTabContent">
+    <div id="adminTabContent">
         <!-- Products Tab -->
-        <div class="tab-pane fade" id="products" role="tabpanel">
+        <div class="custom-tab-content active" id="products">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h2>Danh sách sản phẩm</h2>
                 <a href="{{ url_for('admin.add_product') }}" class="btn btn-primary">Thêm sản phẩm mới</a>
@@ -65,10 +191,12 @@
                         <td>{{ product.category.name if product.category else 'N/A' }}</td>
                         <td>{{ product.stock }}</td>
                         <td>
-                            <a href="{{ url_for('admin.edit_product', id=product.id) }}" class="btn btn-warning btn-sm">Sửa</a>
-                            <form action="{{ url_for('admin.delete_product', id=product.id) }}" method="POST" class="d-inline">
-                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc muốn xóa sản phẩm này?')">Xóa</button>
-                            </form>
+                            <div class="btn-group">
+                                <a href="{{ url_for('admin.edit_product', id=product.id) }}" class="btn btn-warning btn-sm">Sửa</a>
+                                <form action="{{ url_for('admin.delete_product', id=product.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc muốn xóa sản phẩm này?')">Xóa</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -78,7 +206,7 @@
         </div>
 
         <!-- Orders Tab -->
-        <div class="tab-pane fade" id="orders" role="tabpanel">
+        <div class="custom-tab-content" id="orders">
             <h2 class="mb-3">Danh sách đơn hàng</h2>
             <div class="table-responsive">
                 <table class="table table-striped">
@@ -108,45 +236,16 @@
                                 {% elif order.status == 'delivered' %}bg-success
                                 {% elif order.status == 'cancelled' %}bg-danger
                                 {% else %}bg-secondary{% endif %}">
-                                {% if order.status == 'pending' %}
-                                    Chờ xác nhận
-                                {% elif order.status == 'confirmed' %}
-                                    Đã xác nhận
-                                {% elif order.status == 'pickup_pending' %}
-                                    Chờ lấy hàng
-                                {% elif order.status == 'shipping' %}
-                                    Đang giao hàng
-                                {% elif order.status == 'delivered' %}
-                                    Đã giao hàng
-                                {% elif order.status == 'cancelled' %}
-                                    Đã hủy
-                                {% else %}
-                                    {{ order.status }}
-                                {% endif %}
+                                {{ get_order_status_label(order.status) }}
                             </span>
                         </td>
                         <td>
                             <div class="btn-group">
-                                <a href="{{ url_for('admin.order_detail', order_id=order.id) }}"
-                                   class="btn btn-primary btn-sm">
+                                <a href="{{ url_for('admin.order_detail', order_id=order.id) }}" class="btn btn-primary btn-sm">
                                     <i class="fas fa-eye"></i> Chi tiết
                                 </a>
-                                {% if order.status == 'pending' %}
-                                <form action="{{ url_for('admin.approve_order', order_id=order.id) }}"
-                                      method="post" class="d-inline ms-1">
-                                    <button type="submit" class="btn btn-sm btn-success">
-                                        <i class="fas fa-check"></i> Duyệt
-                                    </button>
-                                </form>
-                                <button type="button" class="btn btn-sm btn-danger ms-1"
-                                        onclick="showCancelModal({{ order.id }})">
-                                    <i class="fas fa-times"></i> Hủy
-                                </button>
-                                {% endif %}
-                                <form action="{{ url_for('admin.delete_order', order_id=order.id) }}"
-                                      method="POST" class="d-inline ms-1">
-                                    <button type="submit" class="btn btn-sm btn-danger"
-                                            onclick="return confirm('Bạn có chắc chắn muốn xóa đơn hàng này không?');">
+                                <form action="{{ url_for('admin.delete_order', order_id=order.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa đơn hàng này không?');">
                                         <i class="fas fa-trash"></i> Xóa
                                     </button>
                                 </form>
@@ -160,7 +259,7 @@
         </div>
 
         <!-- Users Tab -->
-        <div class="tab-pane fade" id="users" role="tabpanel">
+        <div class="custom-tab-content" id="users">
             <h2 class="mb-3">Danh sách người dùng</h2>
             <div class="table-responsive">
                 <table class="table table-striped">
@@ -183,12 +282,14 @@
                         <td>{{ 'Admin' if user.role == 'admin' else 'Người dùng' }}</td>
                         <td>{{ user.created_at.strftime('%d-%m-%Y %H:%M') if user.created_at else 'N/A' }}</td>
                         <td>
-                            <a href="{{ url_for('admin.edit_user', id=user.id) }}" class="btn btn-warning btn-sm">Sửa</a>
-                            {% if current_user.id != user.id %}
-                            <form action="{{ url_for('admin.delete_user', id=user.id) }}" method="POST" class="d-inline">
-                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc muốn xóa người dùng này?')">Xóa</button>
-                            </form>
-                            {% endif %}
+                            <div class="btn-group">
+                                <a href="{{ url_for('admin.edit_user', id=user.id) }}" class="btn btn-warning btn-sm">Sửa</a>
+                                {% if current_user.id != user.id %}
+                                <form action="{{ url_for('admin.delete_user', id=user.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc muốn xóa người dùng này?')">Xóa</button>
+                                </form>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -198,7 +299,7 @@
         </div>
 
         <!-- Comments Tab -->
-        <div class="tab-pane fade" id="comments" role="tabpanel">
+        <div class="custom-tab-content" id="comments">
             <h2 class="mb-3">Danh sách bình luận</h2>
             <div class="table-responsive">
                 <table class="table table-striped">
@@ -223,10 +324,12 @@
                         <td>{{ comment.score if comment.score else 'N/A' }}</td>
                         <td>{{ comment.timestamp.strftime('%d-%m-%Y %H:%M') if comment.timestamp else 'N/A' }}</td>
                         <td>
-                            <a href="{{ url_for('admin.edit_comment', id=comment.id) }}" class="btn btn-warning btn-sm">Sửa</a>
-                            <form action="{{ url_for('admin.delete_comment', id=comment.id) }}" method="POST" class="d-inline">
-                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc muốn xóa bình luận này?')">Xóa</button>
-                            </form>
+                            <div class="btn-group">
+                                <a href="{{ url_for('admin.edit_comment', id=comment.id) }}" class="btn btn-warning btn-sm">Sửa</a>
+                                <form action="{{ url_for('admin.delete_comment', id=comment.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc muốn xóa bình luận này?')">Xóa</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -238,77 +341,77 @@
 </div>
 
 <!-- Modal xác nhận hủy đơn -->
-<div class="modal fade" id="cancelModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Hủy đơn hàng</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="cancelForm" action="" method="post">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="cancel_reason" class="form-label">Lý do hủy đơn</label>
-                        <textarea class="form-control" id="cancel_reason" name="cancel_reason"
-                                  rows="3" required></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                    <button type="submit" class="btn btn-danger">Xác nhận hủy</button>
-                </div>
-            </form>
+<div class="custom-modal" id="cancelModal">
+    <div class="custom-modal-content">
+        <div class="custom-modal-header">
+            <h5 class="custom-modal-title">Hủy đơn hàng</h5>
+            <button type="button" class="custom-modal-close" onclick="TechMartAdmin.closeCustomModal()">×</button>
         </div>
+        <form id="cancelForm" action="" method="post">
+            <div class="custom-modal-body">
+                <div class="mb-3">
+                    <label for="cancel_reason" class="form-label">Lý do hủy đơn</label>
+                    <textarea class="form-control" id="cancel_reason" name="cancel_reason" rows="3" required></textarea>
+                </div>
+            </div>
+            <div class="custom-modal-footer">
+                <button type="button" class="custom-btn custom-btn-secondary" onclick="TechMartAdmin.closeCustomModal()">Đóng</button>
+                <button type="submit" class="custom-btn custom-btn-danger">Xác nhận hủy</button>
+            </div>
+        </form>
     </div>
 </div>
+{% endblock %}
 
-<!-- Add custom CSS -->
-<style>
-    .table-responsive {
-        margin-top: 1rem;
-    }
-    .btn-sm {
-        margin: 0 2px;
-    }
-    .nav-tabs .nav-link {
-        color: #495057;
-    }
-    .nav-tabs .nav-link.active {
-        font-weight: bold;
-        color: #007bff;
-    }
-</style>
+{% block scripts %}
+    {{ super() }} <!-- Kế thừa dropdown.js, search.js, chatbot_new.js từ layout.html -->
+    <script>
+        const TechMartAdmin = {
+            init: function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const activeTab = urlParams.get('tab') || 'products';
+                this.showTab(activeTab);
+                document.querySelectorAll('.custom-tab').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        const tabId = tab.getAttribute('data-tab');
+                        this.showTab(tabId);
+                    });
+                });
+            },
 
-<!-- Add Bootstrap Tab JavaScript -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Lấy tham số tab từ URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const tab = urlParams.get('tab') || 'products'; // Mặc định là 'products'
+            showTab: function(tabId) {
+                document.querySelectorAll('.custom-tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelectorAll('.custom-tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                const selectedTab = document.querySelector(`.custom-tab[data-tab="${tabId}"]`);
+                const selectedContent = document.querySelector(`#${tabId}`);
+                if (selectedTab && selectedContent) {
+                    selectedTab.classList.add('active');
+                    selectedContent.classList.add('active');
+                } else {
+                    document.querySelector('.custom-tab[data-tab="products"]').classList.add('active');
+                    document.querySelector('#products').classList.add('active');
+                }
+            },
 
-        // Kích hoạt tab tương ứng
-        const tabElement = document.querySelector(`#${tab}-tab`);
-        if (tabElement) {
-            const tabTrigger = new bootstrap.Tab(tabElement);
-            tabTrigger.show();
-        }
+            showCustomModal: function(orderId) {
+                const modal = document.getElementById('cancelModal');
+                const form = document.getElementById('cancelForm');
+                form.action = "{{ url_for('admin.cancel_order', order_id=0) }}".replace('0', orderId);
+                modal.classList.add('active');
+            },
 
-        // Xử lý chuyển đổi tab
-        var triggerTabList = [].slice.call(document.querySelectorAll('#adminTabs button'));
-        triggerTabList.forEach(function(triggerEl) {
-            var tabTrigger = new bootstrap.Tab(triggerEl);
-            triggerEl.addEventListener('click', function(event) {
-                event.preventDefault();
-                tabTrigger.show();
-            });
+            closeCustomModal: function() {
+                const modal = document.getElementById('cancelModal');
+                modal.classList.remove('active');
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            TechMartAdmin.init();
         });
-    });
-
-    function showCancelModal(orderId) {
-        const modal = new bootstrap.Modal(document.getElementById('cancelModal'));
-        document.getElementById('cancelForm').action =
-            "{{ url_for('admin.cancel_order', order_id=0, tab='orders') }}".replace('0', orderId);
-        modal.show();
-    }
-</script>
+    </script>
 {% endblock %}

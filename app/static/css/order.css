@@ -1,0 +1,316 @@
+/* Root variables for consistent theming */
+:root {
+  --primary-color: #1E40AF; /* Xanh lam đậm hơn, hiện đại */
+  --secondary-color: #60A5FA; /* Xanh lam sáng, tươi hơn */
+  --accent-color: #F472B6; /* Hồng phấn làm điểm nhấn */
+  --dark-color: #1F2937; /* Xám đậm tinh tế */
+  --light-color: #F9FAFB; /* Trắng nhẹ nhàng */
+  --gray-color: #D1D5DB; /* Xám nhạt hiện đại */
+  --success-color: #34D399; /* Xanh lá tươi */
+  --danger-color: #F87171; /* Đỏ nhạt sang trọng */
+  --warning-color: #FBBF24; /* Vàng ấm */
+  --info-color: #2DD4BF; /* Xanh ngọc hiện đại */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
+  --shadow-glow: 0 0 12px rgba(96, 165, 250, 0.3);
+  --card-border-radius: 12px;
+}
+
+/* Container Styling */
+.container-fluid {
+  padding: 20px;
+  background-color: var(--light-color);
+}
+
+/* Navigation Tabs */
+.nav-tabs {
+  border-bottom: 2px solid var(--gray-color);
+  margin-bottom: 20px;
+}
+
+.nav-tabs .nav-link {
+  color: var(--dark-color);
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--card-border-radius) var(--card-border-radius) 0 0;
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+  color: var(--primary-color);
+  background-color: var(--gray-color);
+}
+
+.nav-tabs .nav-link.active {
+  color: var(--primary-color);
+  font-weight: 700;
+  background-color: var(--light-color);
+  border-bottom: 3px solid var(--primary-color);
+}
+
+/* Tab Content */
+.tab-content {
+  background: #ffffff;
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+}
+
+/* Headings */
+.tab-pane h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--dark-color);
+  margin-bottom: 20px;
+}
+
+/* Table Styling */
+.table-responsive {
+  margin-top: 1rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table thead th {
+  background-color: var(--gray-color);
+  color: var(--dark-color);
+  font-weight: 600;
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 2px solid var(--gray-color);
+}
+
+.table tbody tr {
+  transition: background-color 0.3s ease;
+}
+
+.table tbody tr:hover {
+  background-color: var(--light-color);
+}
+
+.table tbody td {
+  padding: 10px 15px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--gray-color);
+}
+
+/* Buttons */
+.btn, .custom-btn {
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: var(--card-border-radius);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--light-color);
+}
+
+.btn-primary:hover {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-warning {
+  background-color: var(--warning-color);
+  border-color: var(--warning-color);
+  color: var(--dark-color);
+}
+
+.btn-warning:hover {
+  background-color: #e8a418;
+  border-color: #e8a418;
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-danger, .custom-btn-danger {
+  background-color: var(--danger-color);
+  border-color: var(--danger-color);
+  color: var(--light-color);
+}
+
+.btn-danger:hover, .custom-btn-danger:hover {
+  background-color: #e55a5a;
+  border-color: #e55a5a;
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-success {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+  color: var(--dark-color);
+}
+
+.btn-success:hover {
+  background-color: #2cb584;
+  border-color: #2cb584;
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-sm, .custom-btn.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  margin: 0 2px;
+}
+
+/* Badge Styling */
+.badge {
+  font-size: 0.85rem;
+  padding: 6px 12px;
+  border-radius: var(--card-border-radius);
+}
+
+.bg-warning {
+  background-color: var(--warning-color) !important;
+  color: var(--dark-color);
+}
+
+.bg-info {
+  background-color: var(--info-color) !important;
+  color: var(--dark-color);
+}
+
+.bg-primary {
+  background-color: var(--primary-color) !important;
+  color: var(--light-color);
+}
+
+.bg-success {
+  background-color: var(--success-color) !important;
+  color: var(--dark-color);
+}
+
+.bg-danger {
+  background-color: var(--danger-color) !important;
+  color: var(--light-color);
+}
+
+.bg-secondary {
+  background-color: var(--gray-color) !important;
+  color: var(--dark-color);
+}
+
+/* Modal Styling */
+.modal-content {
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--shadow-md);
+}
+
+.modal-header {
+  background-color: var(--light-color);
+  border-bottom: 1px solid var(--gray-color);
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--dark-color);
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--dark-color);
+  margin-bottom: 8px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid var(--gray-color);
+  border-radius: var(--card-border-radius);
+  font-size: 0.9rem;
+  background: var(--light-color);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-glow);
+  outline: none;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--gray-color);
+  padding: 15px;
+}
+
+.btn-secondary, .custom-btn-secondary {
+  background-color: var(--gray-color);
+  border-color: var(--gray-color);
+  color: var(--dark-color);
+}
+
+.btn-secondary:hover, .custom-btn-secondary:hover {
+  background-color: #b8c0ca;
+  border-color: #b8c0ca;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .container-fluid {
+    padding: 10px;
+  }
+
+  .nav-tabs .nav-link {
+    font-size: 0.9rem;
+    padding: 8px 15px;
+  }
+
+  .tab-pane h2 {
+    font-size: 1.5rem;
+  }
+
+  .table thead th,
+  .table tbody td {
+    font-size: 0.85rem;
+    padding: 8px 10px;
+  }
+
+  .btn, .custom-btn {
+    font-size: 0.85rem;
+    padding: 6px 12px;
+  }
+
+  .btn-sm, .custom-btn.btn-sm {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .table-responsive {
+    font-size: 0.8rem;
+  }
+
+  .table thead th,
+  .table tbody td {
+    padding: 6px 8px;
+  }
+
+  .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .btn-sm, .custom-btn.btn-sm {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    margin: 2px 0;
+  }
+}

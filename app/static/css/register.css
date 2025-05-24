@@ -1,0 +1,250 @@
+/* Kiểu dáng trang đăng ký */
+.auth-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 0;
+    background: transparent; /* Phù hợp với layout.css */
+}
+
+/* Hộp xác thực */
+.auth-box {
+    max-width: 500px;
+    margin: 0 auto;
+    background: var(--light-color); /* Sử dụng màu sáng */
+    border-radius: var(--card-border-radius); /* Sử dụng bán kính viền thẻ */
+    box-shadow: var(--shadow-md); /* Sử dụng bóng vừa */
+    padding: 2rem;
+}
+
+/* Tiêu đề xác thực */
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-header h2 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--dark-color); /* Sử dụng màu tối */
+    margin-bottom: 0.5rem;
+}
+
+.auth-header p {
+    font-size: 0.9rem;
+    color: var(--gray-color); /* Sử dụng màu xám */
+}
+
+/* Biểu mẫu xác thực */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Hàng biểu mẫu (cho first_name và last_name) */
+.form-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.form-row .form-group {
+    flex: 1;
+    min-width: 150px;
+}
+
+/* Nhóm biểu mẫu */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--dark-color); /* Sử dụng màu tối */
+    font-size: 0.9rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem; /* Thêm padding phải để chứa biểu tượng mắt */
+    border: 1px solid var(--gray-color); /* Sử dụng màu xám */
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: var(--light-color); /* Sử dụng màu sáng */
+    transition: all 0.3s ease;
+}
+
+.form-control:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md); /* Sử dụng bóng vừa */
+    border-color: var(--secondary-color); /* Sử dụng màu phụ */
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color); /* Sử dụng màu chính */
+    box-shadow: var(--shadow-glow); /* Sử dụng bóng phát sáng */
+    transform: translateY(-2px);
+}
+
+.form-control::placeholder {
+    color: var(--gray-color); /* Sử dụng màu xám */
+}
+
+/* Vùng chứa mật khẩu */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 0.75rem; /* Đặt gần viền phải hơn */
+    top: 50%;
+    transform: translateY(-50%); /* Căn giữa theo chiều dọc */
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--gray-color); /* Sử dụng màu xám */
+    font-size: 1rem;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.3s ease;
+}
+
+.toggle-password:hover {
+    color: var(--primary-color); /* Sử dụng màu chính */
+}
+
+.toggle-password i {
+    font-size: 0.9rem;
+}
+
+/* Văn bản biểu mẫu (chú thích) */
+.form-text {
+    font-size: 0.85rem;
+    color: var(--gray-color); /* Sử dụng màu xám */
+    margin-top: 0.25rem;
+    display: block;
+}
+
+/* Thông báo lỗi */
+.form-error {
+    font-size: 0.85rem;
+    color: var(--danger-color); /* Sử dụng màu nguy hiểm */
+    margin-top: 0.25rem;
+    display: block;
+}
+
+/* Hộp kiểm (điều khoản) */
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--dark-color); /* Sử dụng màu tối */
+}
+
+/* Nút */
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px; /* Bo tròn như nút trong layout.css */
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.6s ease;
+}
+
+.btn:hover::after {
+    width: 200%;
+    height: 200%;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow); /* Sử dụng bóng phát sáng */
+}
+
+.btn:active {
+    transform: scale(0.95);
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); /* Gradient từ layout.css */
+    color: var(--light-color); /* Sử dụng màu sáng */
+}
+
+.btn-primary:hover {
+    background: linear-gradient(45deg, var(--secondary-color), var(--accent-color)); /* Gradient với màu điểm nhấn */
+}
+
+.btn-block {
+    width: 100%;
+}
+
+/* Chân trang xác thực */
+.auth-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+}
+
+.auth-footer p {
+    font-size: 0.9rem;
+    color: var(--gray-color); /* Sử dụng màu xám */
+}
+
+.auth-footer a {
+    color: var(--primary-color); /* Sử dụng màu chính */
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.auth-footer a:hover {
+    color: var(--accent-color); /* Sử dụng màu điểm nhấn */
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .auth-box {
+        padding: 1.5rem;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .auth-box {
+        margin: 0 1rem;
+    }
+
+    .auth-header h2 {
+        font-size: 1.5rem;
+    }
+}

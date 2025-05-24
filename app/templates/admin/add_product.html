@@ -1,54 +1,120 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thêm sản phẩm mới</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
-</head>
-<body>
-    <div class="container">
+{% extends "layout.html" %}
+
+{% block title %}Thêm sản phẩm mới - TechMart{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #F9FAFB;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group label {
+        font-weight: 600;
+        color: #1F2937;
+        margin-bottom: 5px;
+        display: block;
+    }
+    .form-group input, .form-group textarea, .form-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #D1D5DB;
+        border-radius: 8px;
+        font-size: 0.9rem;
+    }
+    .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+    .form-group .form-check {
+        margin-bottom: 10px;
+    }
+    .btn-container {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+    }
+    .checkbox-group {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="form-container">
         <h2>Thêm sản phẩm mới</h2>
-        <form class="card" method="POST" enctype="multipart/form-data">
-            <label for="name">Tên sản phẩm:</label>
-            <input type="text" id="name" name="name" required>
+        <form method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="name">Tên sản phẩm:</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+            </div>
 
-            <label for="description">Mô tả:</label>
-            <textarea id="description" name="description"></textarea>
+            <div class="form-group">
+                <label for="description">Mô tả:</label>
+                <textarea class="form-control" id="description" name="description" required></textarea>
+            </div>
 
-            <label for="price">Giá (VNĐ):</label>
-            <input type="number" id="price" name="price" required step="0.01">
+            <div class="form-group">
+                <label for="price">Giá (VNĐ):</label>
+                <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" required>
+            </div>
 
-            <label for="discount_amount">Số tiền giảm (VNĐ):</label>
-            <input type="number" id="discount_amount" name="discount_amount" step="0.01" min="0">
+            <div class="form-group">
+                <label for="discounted_price">Số tiền giảm (VNĐ):</label>
+                <input type="number" class="form-control" id="discounted_price" name="discounted_price" step="0.01" min="0">
+            </div>
 
-            <label for="category_id">Danh mục:</label>
-            <select id="category_id" name="category_id">
-                <option value="">Chọn danh mục</option>
-                {% for category in categories %}
+            <div class="form-group">
+                <label for="category_id">Danh mục:</label>
+                <select class="form-control" id="category_id" name="category_id" required>
+                    <option value="">Chọn danh mục</option>
+                    {% for category in categories %}
                     <option value="{{ category.id }}">{{ category.name }}</option>
-                {% endfor %}
-            </select>
+                    {% endfor %}
+                </select>
+            </div>
 
-            <label for="image">Hình ảnh:</label>
-            <input type="file" id="image" name="image" accept="image/*">
-            <small>Để nguyên nếu không muốn thay đổi ảnh.</small>
+            <div class="form-group">
+                <label for="image">Hình ảnh:</label>
+                <input type="file" class="form-control" id="image" name="image" accept="image/*">
+            </div>
 
-            <label for="manufacturer">Nhà sản xuất:</label>
-            <input type="text" id="manufacturer" name="manufacturer">
+            <div class="form-group">
+                <label for="manufacturer">Nhà sản xuất:</label>
+                <input type="text" class="form-control" id="manufacturer" name="manufacturer" required>
+            </div>
 
-            <label for="stock">Số lượng tồn kho:</label>
-            <input type="number" id="stock" name="stock" required>
+            <div class="form-group">
+                <label for="stock_quantity">Số lượng tồn kho:</label>
+                <input type="number" class="form-control" id="stock_quantity" name="stock_quantity" min="0" required>
+            </div>
 
-            <label>Ưu đãi:</label>
-            <label><input type="checkbox" name="is_new"> Mới</label>
-            <label><input type="checkbox" name="is_sale"> Sale</label>
+            <div class="form-group checkbox-group">
+                <label>Ưu đãi:</label>
+                <label><input type="checkbox" name="is_new"> Mới</label>
+                <label><input type="checkbox" name="is_sale"> Sale</label>
+                <label><input type="checkbox" name="is_hot"> Hot</label>
+                <label><input type="checkbox" name="is_limited"> Giới hạn</label>
+                <label><input type="checkbox" name="is_bestseller"> Bán chạy</label>
+            </div>
 
-            <div class="button-group">
-                <button type="submit" class="btn btn-submit">Thêm sản phẩm</button>
-                <a href="{{ url_for('admin.list_products') }}" class="btn btn-back">Quay lại</a>
+            <div class="btn-container">
+                <button type="submit" class="btn btn-primary">Thêm sản phẩm</button>
+                <a href="{{ url_for('admin.list_products', tab='products') }}" class="btn btn-secondary">Quay lại</a>
             </div>
         </form>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

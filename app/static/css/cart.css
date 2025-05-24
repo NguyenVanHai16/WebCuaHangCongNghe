@@ -1,0 +1,284 @@
+/*
+   TechMart - Cart CSS
+   Styles for the cart page, consistent with layout.css
+   Modern design with smooth transitions and responsive layout
+   Updated to make cart products appear smaller and add checkbox styling
+*/
+
+.section {
+  padding: 60px 0;
+}
+
+.section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--dark-color);
+  margin-bottom: 30px;
+  text-align: center;
+  position: relative;
+}
+
+.section-title::after {
+  content: '';
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 2px;
+}
+
+/* Cart Table */
+.cart-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--light-color);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  margin-bottom: 30px;
+}
+
+.cart-table th,
+.cart-table td {
+  padding: 10px 15px;
+  text-align: left;
+  border-bottom: 1px solid var(--gray-color);
+}
+
+.cart-table th {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  color: var(--light-color);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
+.cart-table td {
+  font-size: 0.85rem;
+  color: var(--dark-color);
+}
+
+.cart-table tr:last-child td {
+  border-bottom: none;
+}
+
+.cart-table tr:hover {
+  background: #F3F4F6;
+  transition: background 0.3s ease;
+}
+
+/* Checkbox Styling */
+.cart-table th:first-child,
+.cart-table td:first-child {
+  width: 50px;
+  text-align: center;
+}
+
+input[type="checkbox"] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--gray-color);
+  border-radius: 4px;
+  background: var(--light-color);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+input[type="checkbox"]:checked {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+input[type="checkbox"]:checked::after {
+  content: '\2714';
+  color: var(--light-color);
+  font-size: 12px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+input[type="checkbox"]:hover {
+  border-color: var(--secondary-color);
+}
+
+/* Cart Product */
+.cart-product {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cart-product-image {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  box-shadow: var(--shadow-sm);
+}
+
+.cart-product a {
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: var(--primary-color);
+  transition: color 0.3s ease;
+}
+
+.cart-product a:hover {
+  color: var(--accent-color);
+}
+
+/* Quantity Input */
+.update-quantity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.quantity-input {
+  width: 60px;
+  padding: 8px;
+  border: 1px solid var(--gray-color);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  text-align: center;
+  background: var(--light-color);
+  transition: all 0.3s ease;
+}
+
+.quantity-input:hover {
+  border-color: var(--secondary-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.quantity-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  outline: none;
+}
+
+/* Cart Summary */
+.cart-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: var(--light-color);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--shadow-md);
+}
+
+.cart-total h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--dark-color);
+  margin: 0;
+}
+
+.cart-total span {
+  color: var(--accent-color);
+}
+
+.cart-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.cart-actions .btn {
+  padding: 12px 25px;
+  font-size: 0.95rem;
+}
+
+/* Empty Cart */
+.empty-cart {
+  text-align: center;
+  padding: 40px;
+  background: var(--light-color);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--shadow-md);
+}
+
+.empty-cart p {
+  font-size: 1.1rem;
+  color: var(--dark-color);
+  margin-bottom: 20px;
+}
+
+.empty-cart a {
+  font-weight: 600;
+  color: var(--primary-color);
+  transition: color 0.3s ease;
+}
+
+.empty-cart a:hover {
+  color: var(--accent-color);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .cart-table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .cart-table th,
+  .cart-table td {
+    min-width: 100px;
+  }
+
+  .cart-summary {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .cart-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .cart-actions .btn {
+    width: 100%;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+
+  .cart-total h3 {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .cart-product {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .cart-product-image {
+    width: 50px;
+    height: 50px;
+  }
+
+  .update-quantity {
+    justify-content: center;
+  }
+
+  .cart-table th,
+  .cart-table td {
+    padding: 8px 10px;
+  }
+
+  .cart-table th:first-child,
+  .cart-table td:first-child {
+    width: 40px;
+  }
+}

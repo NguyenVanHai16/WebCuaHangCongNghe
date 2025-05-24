@@ -1,5 +1,10 @@
 {% extends "layout.html" %}
 
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cart.css') }}">
+{% endblock %}
+
 {% block title %}Giỏ Hàng{% endblock %}
 
 {% block content %}
@@ -8,58 +13,251 @@
     <div class="container">
         <h2 class="section-title">Giỏ Hàng Của Bạn</h2>
 
-        {% if cart_items %}
-        <table class="cart-table">
-            <thead>
-                <tr>
-                    <th>Sản Phẩm</th>
-                    <th>Giá</th>
-                    <th>Số Lượng</th>
-                    <th>Tổng</th>
-                    <th>Thao Tác</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in cart_items %}
-                <tr>
-                    <td>
-                        <div class="cart-product">
-                            <img src="{{ item.product.image | default(url_for('static', filename='img/default-product.jpg')) }}" alt="{{ item.product.name | default('Sản phẩm không tên') }}" class="cart-product-image" onerror="this.src='{{ url_for('static', filename='img/default-product.jpg') }}'">
-                            <a href="{{ url_for('products.product_detail', product_id=item.product.id) }}">{{ item.product.name | default('Sản phẩm không tên') }}</a>
-                        </div>
-                    </td>
-                    <td>{{ (item.product.discounted_price if item.product.discounted_price else item.product.price) | default(0) | int | format_number }} ₫</td>
-                    <td>
-                        <form action="{{ url_for('cart.update_cart', item_id=item.id) }}" method="POST" class="update-quantity">
-                            <input type="number" name="quantity" value="{{ item.quantity | default(1) }}" min="1" class="quantity-input">
-                            <button type="submit" class="btn btn-sm btn-outline">Cập nhật</button>
-                        </form>
-                    </td>
-                    <td>{{ item.subtotal | default(0) | int | format_number }} ₫</td>
-                    <td>
-                        <form action="{{ url_for('cart.remove_from_cart', item_id=item.id) }}" method="POST">
-                            <button type="submit" class="btn btn-sm btn-danger">Xóa</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="cart-content">
+            <table class="cart-table" style="{% if not cart_items %}display: none;{% endif %}">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="select-all" onchange="toggleSelectAll()"> Chọn</th>
+                        <th>Sản Phẩm</th>
+                        <th>Giá</th>
+                        <th>Số Lượng</th>
+                        <th>Tổng</th>
+                        <th>Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart_items %}
+                    <tr data-item-id="{{ item.id }}">
+                        <td>
+                            <input type="checkbox" name="selected_items" value="{{ item.id }}" class="select-item" checked>
+                        </td>
+                        <td>
+                            <div class="cart-product">
+                                <img src="{{ url_for('static', filename=item.product.image.lstrip('/static/')) if item.product.image else url_for('static', filename='uploads/sanpham/default.jpg') }}"
+                                     alt="{{ item.product.name | default('Sản phẩm không tên') }}"
+                                     class="cart-product-image"
+                                     onerror="this.src='{{ url_for('static', filename='uploads/sanpham/default.jpg') }}'">
+                                <a href="{{ url_for('products.product_detail', product_id=item.product.id) }}">{{ item.product.name | default('Sản phẩm không tên') }}</a>
+                            </div>
+                        </td>
+                        <td class="priceMASK" data-price="{{ (item.product.discounted_price if item.product.discounted_price else item.product.price) | default(0) | int }}">{{ (item.product.discounted_price if item.product.discounted_price else item.product.price) | default(0) | int | format_number }} ₫</td>
+                        <td>
+                            <form action="{{ url_for('cart.update_cart', item_id=item.id) }}" method="POST" class="update-quantity">
+                                <input type="number" name="quantity" value="{{ item.quantity | default(1) }}" min="1" class="quantity-input">
+                            </form>
+                        </td>
+                        <td class="subtotal">{{ item.subtotal | default(0) | int | format_number }} ₫</td>
+                        <td>
+                            <form action="{{ url_for('cart.remove_from_cart', item_id=item.id) }}" method="POST" class="remove-item" onsubmit="return removeItem(event, this)">
+                                <button type="submit" class="btn btn-sm btn-danger">Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
 
-        <div class="cart-summary">
-            <div class="cart-total">
-                <h3>Tổng Cộng: <span>{{ total | default(0) | int | format_number }} ₫</span></h3>
-            </div>
-            <div class="cart-actions">
-                <a href="{{ url_for('products.all_products') }}" class="btn btn-outline">Tiếp tục mua sắm</a>
-                <a href="{{ url_for('cart.checkout') }}" class="btn btn-primary">Thanh Toán</a>
+            <form id="cart-form" action="{{ url_for('cart.checkout') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ session['csrf_token'] }}">
+                <div class="cart-summary" style="{% if not cart_items %}display: none;{% endif %}">
+                    <div class="cart-total">
+                        <h3>Tổng Sản Phẩm: <span id="cart-total-items">0</span> sản phẩm</h3>
+                        <h3>Tổng Tiền: <span id="cart-total-amount">0</span> ₫</h3>
+                    </div>
+                    <div class="cart-actions">
+                        <a href="{{ url_for('products.all_products') }}" class="btn btn-outline">Tiếp tục mua sắm</a>
+                        <button type="submit" class="btn btn-primary" id="checkout-btn">Thanh Toán</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="empty-cart" style="{% if cart_items %}display: none;{% else %}display: block;{% endif %}">
+                <p>Giỏ hàng của bạn đang trống. <a href="{{ url_for('products.all_products') }}">Mua sắm ngay!</a></p>
             </div>
         </div>
-        {% else %}
-        <div class="empty-cart">
-            <p>Giỏ hàng của bạn đang trống. <a href="{{ url_for('products.all_products') }}">Mua sắm ngay!</a></p>
-        </div>
-        {% endif %}
     </div>
 </section>
+
+<script>
+function toggleSelectAll() {
+    const selectAll = document.getElementById('select-all');
+    const checkboxes = document.querySelectorAll('.select-item');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+    updateTotalItems();
+}
+
+function updateSubtotal(input) {
+    if (!(input instanceof HTMLElement)) {
+        console.error('Invalid input element:', input);
+        return;
+    }
+    const row = input.closest('tr');
+    if (!row) {
+        console.error('Could not find parent row for input:', input);
+        return;
+    }
+    const quantity = parseInt(input.value) || 1;
+    const priceElement = row.querySelector('.priceMASK');
+    if (!priceElement) {
+        console.error('Price element not found in row:', row);
+        return;
+    }
+    const price = parseInt(priceElement.dataset.price) || 0;
+    const subtotal = quantity * price;
+    const subtotalElement = row.querySelector('.subtotal');
+    if (subtotalElement) {
+        subtotalElement.textContent = subtotal.toLocaleString('vi-VN') + ' ₫';
+    }
+    updateTotalItems();
+}
+
+function updateTotalItems() {
+    let totalItems = 0;
+    let totalAmount = 0;
+    const checkboxes = document.querySelectorAll('.select-item:checked');
+    checkboxes.forEach(checkbox => {
+        const row = checkbox.closest('tr');
+        const quantity = parseInt(row.querySelector('.quantity-input').value) || 0;
+        const subtotalText = row.querySelector('.subtotal').textContent.replace(/[^0-9]/g, '');
+        const subtotal = parseInt(subtotalText) || 0;
+        totalItems += quantity;
+        totalAmount += subtotal;
+    });
+    document.getElementById('cart-total-items').textContent = totalItems;
+    document.getElementById('cart-total-amount').textContent = totalAmount.toLocaleString('vi-VN');
+
+    const table = document.querySelector('.cart-table');
+    const summary = document.querySelector('.cart-summary');
+    const emptyMessage = document.querySelector('.empty-cart');
+    const checkoutBtn = document.getElementById('checkout-btn');
+    if (!document.querySelector('.cart-table tbody tr')) {
+        table.style.display = 'none';
+        summary.style.display = 'none';
+        emptyMessage.style.display = 'block';
+        checkoutBtn.disabled = true;
+    } else {
+        table.style.display = 'table';
+        summary.style.display = 'flex';
+        emptyMessage.style.display = 'none';
+        checkoutBtn.disabled = checkboxes.length === 0;
+    }
+}
+
+function updateQuantity(input) {
+    const form = input.closest('form.update-quantity');
+    if (!form) {
+        console.error('Could not find parent form for input:', input);
+        return;
+    }
+    const formData = new FormData(form);
+    fetch(form.action, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Phản hồi từ server không thành công: ' + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            updateTotalItems();
+            console.log('Quantity updated successfully:', data);
+        } else {
+            console.error('Failed to update quantity:', data.message);
+            input.value = input.defaultValue;
+            updateSubtotal(input);
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error updating quantity:', error);
+        input.value = input.defaultValue;
+        updateSubtotal(input);
+        alert('Có lỗi xảy ra khi cập nhật số lượng: ' + error.message);
+    });
+}
+
+function removeItem(event, form) {
+    event.preventDefault();
+    const row = form.closest('tr');
+    fetch(form.action, {
+        method: 'POST'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Phản hồi từ server không thành công: ' + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            row.remove();
+            updateTotalItems();
+            alert(data.message);
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra khi xóa sản phẩm: ' + error.message);
+    });
+    return false;
+}
+
+document.querySelectorAll('.select-item').forEach(checkbox => {
+    checkbox.addEventListener('change', updateTotalItems);
+});
+
+document.querySelectorAll('.quantity-input').forEach(input => {
+    input.addEventListener('change', () => {
+        updateSubtotal(input);
+        updateQuantity(input);
+    });
+});
+
+// Cập nhật tổng số lượng và tổng tiền khi trang tải
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.quantity-input').forEach(input => updateSubtotal(input));
+    updateTotalItems();
+    // Đảm bảo nút "Thanh toán" được bật nếu có sản phẩm được chọn
+    const selectAll = document.getElementById('select-all');
+    const checkboxes = document.querySelectorAll('.select-item');
+    if (checkboxes.length > 0) {
+        selectAll.checked = true;
+        checkboxes.forEach(checkbox => checkbox.checked = true);
+        updateTotalItems();
+    }
+});
+
+// Xử lý submit form để gửi selected_items
+document.getElementById('cart-form').addEventListener('submit', function(event) {
+    console.log('Form submitted');
+    console.log('Selected items:', document.querySelectorAll('.select-item:checked').length);
+
+    // Xóa các input ẩn cũ
+    const existingHiddenInputs = document.querySelectorAll('input[name="selected_items"][type="hidden"]');
+    existingHiddenInputs.forEach(input => input.remove());
+
+    // Thêm các input ẩn cho các checkbox đã chọn
+    const checkedItems = document.querySelectorAll('.select-item:checked');
+    checkedItems.forEach(item => {
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'selected_items';
+        hiddenInput.value = item.value;
+        document.getElementById('cart-form').appendChild(hiddenInput);
+    });
+
+    // Ngăn submit nếu không có mục nào được chọn
+    if (checkedItems.length === 0) {
+        event.preventDefault();
+        alert('Vui lòng chọn ít nhất một sản phẩm để thanh toán.');
+    }
+});
+</script>
 {% endblock %}

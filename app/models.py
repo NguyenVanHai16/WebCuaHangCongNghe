@@ -4,14 +4,32 @@ from datetime import datetime
 from enum import Enum
 import bcrypt
 
-# Định nghĩa OrderStatus ở mức cao nhất
+# Định nghĩa OrderStatus với giá trị tiếng Anh và nhãn tiếng Việt
 class OrderStatus(Enum):
-    PENDING = 'Chờ xác nhận'
-    CONFIRMED = 'Đã xác nhận'
-    PICKUP_PENDING = 'Chờ lấy hàng'
-    SHIPPING = 'Đang giao hàng'
-    DELIVERED = 'Đã giao hàng'
-    CANCELLED = 'Đã hủy'
+    PENDING = 'pending'
+    CONFIRMED = 'confirmed'
+    PICKUP_PENDING = 'processing'
+    SHIPPING = 'shipping'
+    DELIVERED = 'delivered'
+    CANCELLED = 'cancelled'
+
+    @classmethod
+    def get_label(cls, value):
+        status_labels = {
+            'pending': 'Chờ xác nhận',
+            'confirmed': 'Đã xác nhận',
+            'processing': 'Chờ lấy hàng',
+            'shipping': 'Đang giao hàng',
+            'delivered': 'Đã giao hàng',
+            'cancelled': 'Đã hủy'
+        }
+        return status_labels.get(value, value)
+
+# Bảng liên kết cho yêu thích
+user_product_likes = db.Table('user_product_likes',
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('product_id', db.Integer, db.ForeignKey('products.id'), primary_key=True)
+)
 
 # Bảng User - Người dùng
 class User(db.Model, UserMixin):
@@ -32,6 +50,7 @@ class User(db.Model, UserMixin):
     comments = db.relationship('Comment', backref='user', lazy=True, cascade='save-update, merge')
     reactions = db.relationship('Reaction', backref='user', lazy=True, cascade='save-update, merge')
     orders = db.relationship('Order', backref='user', lazy=True, cascade='save-update, merge')
+    likes = db.relationship('Product', secondary=user_product_likes, backref=db.backref('liked_by', lazy='dynamic'))
 
     @property
     def is_admin(self):
@@ -112,6 +131,9 @@ class Product(db.Model):
     featured = db.Column(db.Boolean, default=False)
     is_new = db.Column(db.Boolean, default=False)
     is_sale = db.Column(db.Boolean, default=False)
+    is_hot = db.Column(db.Boolean, default=False)
+    is_limited = db.Column(db.Boolean, default=False)
+    is_bestseller = db.Column(db.Boolean, default=False)
     rating = db.Column(db.Float, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

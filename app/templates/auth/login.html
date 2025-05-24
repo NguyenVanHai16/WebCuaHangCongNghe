@@ -3,52 +3,65 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/login_register.css') }}">
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-    /* Ẩn modal mặc định */
-    #forgot-password-modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        z-index: 1000;
-        justify-content: center;
-        align-items: center;
-    }
-    .modal-content {
-        background-color: white;
-        padding: 20px;
-        border-radius: 5px;
-        width: 90%;
-        max-width: 500px;
-        position: relative;
-    }
-    .modal-close {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        font-size: 24px;
+    /* Chuẩn hóa kiểu nút */
+    .btn {
+        padding: 8px 16px;
+        border-radius: var(--card-border-radius);
+        font-size: 0.9rem;
+        font-weight: 500;
         cursor: pointer;
+        border: none;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 100px;
+        height: 36px;
+    }
+    .form-group .btn {
+        width: 100%; /* Thay thế btn-block */
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+        color: var(--light-color);
+    }
+    .btn-primary:hover {
+        background: linear-gradient(135deg, var(--secondary-color) 0%, var(--accent-color) 100%);
+        box-shadow: var(--shadow-glow);
     }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Modal đặt lại mật khẩu -->
+<div class="modal" id="forgot-password-modal">
+    <div class="modal-content">
+        <span class="modal-close">×</span>
+        <div class="auth-header">
+            <h2>Đặt lại mật khẩu</h2>
+            <p>Nhập email của bạn để nhận liên kết đặt lại mật khẩu</p>
+        </div>
+        <form method="POST" action="{{ url_for('auth.forgot_password') }}" class="auth-form">
+            <div class="form-group">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" id="email" name="email" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Gửi liên kết đặt lại</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="auth-container">
     <div class="auth-box">
         <div class="auth-header">
             <h2>Đăng nhập</h2>
             <p>Đăng nhập vào tài khoản TechMart của bạn</p>
-        </div>
-
-        <!-- Tabs -->
-        <div class="auth-tabs">
-            <div class="auth-tab active">Đăng nhập</div>
-            <div class="auth-tab"><a href="{{ url_for('auth.register') }}">Đăng ký</a></div>
         </div>
 
         <form method="POST" action="" class="auth-form">
@@ -90,29 +103,9 @@
             </div>
 
             <div class="form-group">
-                {{ form.submit(class="btn btn-primary btn-block") }}
+                {{ form.submit(class="btn btn-primary") }}
             </div>
         </form>
-
-        <!-- Modal đặt lại mật khẩu -->
-        <div class="modal" id="forgot-password-modal">
-            <div class="modal-content">
-                <span class="modal-close">×</span>
-                <div class="auth-header">
-                    <h2>Đặt lại mật khẩu</h2>
-                    <p>Nhập email của bạn để nhận liên kết đặt lại mật khẩu</p>
-                </div>
-                <form method="POST" action="{{ url_for('auth.forgot_password') }}" class="auth-form">
-                    <div class="form-group">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" id="email" name="email" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <button type="submit" class="btn btn-primary btn-block">Gửi liên kết đặt lại</button>
-                    </div>
-                </form>
-            </div>
-        </div>
 
         <div class="auth-footer">
             <p>Chưa có tài khoản? <a href="{{ url_for('auth.register') }}">Đăng ký ngay</a></p>
@@ -122,6 +115,7 @@
 {% endblock %}
 
 {% block scripts %}
+{{ super() }}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Chuyển đổi hiển thị mật khẩu
@@ -156,21 +150,31 @@
         if (forgotPasswordLink) {
             forgotPasswordLink.addEventListener('click', function (e) {
                 e.preventDefault();
-                modal.style.display = 'block';
+                modal.style.display = 'flex';
+                modal.classList.add('show');
+                document.body.classList.add('modal-open');
             });
         }
 
         // Ẩn modal khi nhấn nút đóng
         if (closeModal) {
             closeModal.addEventListener('click', function () {
-                modal.style.display = 'none';
+                modal.classList.remove('show');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    document.body.classList.remove('modal-open');
+                }, 300);
             });
         }
 
         // Ẩn modal khi nhấn ra ngoài
         window.addEventListener('click', function (e) {
             if (e.target === modal) {
-                modal.style.display = 'none';
+                modal.classList.remove('show');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    document.body.classList.remove('modal-open');
+                }, 300);
             }
         });
     });

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app as app
 from flask_login import login_required, current_user
 from app import db
 from app.models import Order, Product, Category, User, Comment, OrderItem, Reaction, CartItem, Address
@@ -18,7 +18,6 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# Hàm phụ trợ để commit cơ sở dữ liệu
 def commit_db_changes(success_message, error_message):
     try:
         db.session.commit()
@@ -26,23 +25,36 @@ def commit_db_changes(success_message, error_message):
     except Exception as e:
         db.session.rollback()
         flash(f'{error_message}: {str(e)}', 'danger')
-        print(f"Lỗi: {e}")
+        print(f"Lỗi xảy ra: {e}")
         raise
 
-# Hàm phụ trợ để lưu hình ảnh
-def save_image(image_file, upload_folder='static/uploads'):
+def save_image(image_file):
+    upload_folder = app.config['UPLOAD_FOLDER']
+    print(f"UPLOAD_FOLDER: {upload_folder}")
     if not os.path.exists(upload_folder):
+        print(f"Tạo thư mục: {upload_folder}")
         os.makedirs(upload_folder)
     filename = secure_filename(image_file.filename)
+    if not filename:
+        print("Lỗi: Tên tệp rỗng hoặc không hợp lệ")
+        raise ValueError("Tên tệp không hợp lệ")
     image_path = os.path.join(upload_folder, filename)
-    image_file.save(image_path)
-    return f"/{upload_folder}/{filename}"
+    print(f"Lưu ảnh vào: {image_path}")
+    try:
+        image_file.save(image_path)
+        print(f"Đã lưu ảnh thành công vào: {image_path}")
+    except Exception as e:
+        print(f"Lỗi khi lưu ảnh: {str(e)}")
+        raise
+    return_path = os.path.join('uploads/sanpham', filename).replace('\\', '/')
+    print(f"Trả về đường dẫn: {return_path}")
+    return return_path
 
 @admin_bp.route('/orders')
 @login_required
 @admin_required
 def orders():
-    orders = Order.query.filter_by(status='pending').order_by(Order.created_at.desc()).all()
+    orders = Order.query.order_by(Order.created_at.desc()).all()
     return render_template('admin/orders.html', orders=orders)
 
 @admin_bp.route('/orders/<int:order_id>')
@@ -52,13 +64,30 @@ def order_detail(order_id):
     order = Order.query.get_or_404(order_id)
     return render_template('admin/order_detail.html', order=order)
 
-@admin_bp.route('/orders/<int:order_id>/update', methods=['POST'])
+@admin_bp.route('/orders/<int:order_id>/update', methods=['POST'], endpoint='update_order_status')
 @login_required
 @admin_required
-def admin_update_status(order_id):
+def update_order_status(order_id):
     order = Order.query.get_or_404(order_id)
     action = request.form.get('action')
     now = datetime.utcnow()
+
+    # Xác thực chuyển đổi trạng thái
+    valid_transitions = {
+        'confirm': ['pending'],
+        'pickup': ['confirmed'],
+        'ship': ['pickup_pending'],
+        'deliver': ['shipping'],
+        'cancel': ['pending', 'confirmed', 'pickup_pending', 'shipping']
+    }
+
+    if action not in valid_transitions:
+        flash('Hành động không hợp lệ!', 'danger')
+        return redirect(url_for('admin.order_detail', order_id=order_id))
+
+    if order.status not in valid_transitions[action]:
+        flash(f'Không thể thực hiện hành động "{action}" từ trạng thái hiện tại "{order.status}"!', 'danger')
+        return redirect(url_for('admin.order_detail', order_id=order_id))
 
     if action == 'confirm':
         order.status = 'confirmed'
@@ -66,31 +95,29 @@ def admin_update_status(order_id):
         order.estimated_delivery = now + timedelta(days=3)
         success_message = 'Đơn hàng đã được xác nhận!'
         error_message = 'Có lỗi xảy ra khi xác nhận đơn hàng'
-
     elif action == 'pickup':
         order.status = 'pickup_pending'
         order.pickup_at = now
         success_message = 'Đơn hàng đã chuyển sang trạng thái chờ lấy hàng!'
         error_message = 'Có lỗi xảy ra khi cập nhật trạng thái chờ lấy hàng'
-
     elif action == 'ship':
         order.status = 'shipping'
         order.shipping_at = now
         success_message = 'Đơn hàng đã bắt đầu giao!'
         error_message = 'Có lỗi xảy ra khi cập nhật trạng thái giao hàng'
-
     elif action == 'deliver':
         order.status = 'delivered'
         order.delivered_at = now
         success_message = 'Đơn hàng đã giao thành công!'
         error_message = 'Có lỗi xảy ra khi cập nhật trạng thái giao hàng thành công'
-
     elif action == 'cancel':
         order.status = 'cancelled'
         order.cancelled_at = now
+        cancel_reason = request.form.get('cancel_reason')
+        if cancel_reason:
+            order.cancel_reason = cancel_reason
         success_message = 'Đã hủy đơn hàng thành công!'
         error_message = 'Có lỗi xảy ra khi hủy đơn hàng'
-
     else:
         flash('Hành động không hợp lệ!', 'danger')
         return redirect(url_for('admin.order_detail', order_id=order_id))
@@ -118,7 +145,7 @@ def admin_update_delivery(order_id):
         flash(f'Định dạng thời gian không hợp lệ: {str(e)}', 'danger')
         return redirect(url_for('admin.order_detail', order_id=order_id))
 
-    return redirect(url_for('admin.order_detail', order_id=order_id))
+    return redirect(url_for('admin.order_detail', id=order_id))
 
 @admin_bp.route('/products')
 @login_required
@@ -145,14 +172,16 @@ def add_product():
         is_new = 'is_new' in request.form
         is_sale = 'is_sale' in request.form
         image_file = request.files.get('image')
+        print(f"Thêm sản phẩm - Tệp ảnh: {image_file}, Tên tệp: {image_file.filename if image_file else 'None'}")  # Debug
 
-        # Kiểm tra đầu vào
         if not name or not description or not price_input or not manufacturer:
-            flash('Vui lòng điền đầy đủ thông tin bắt buộc!', 'danger')
+            flash('Vui lòng cung cấp đầy đủ thông tin bắt buộc!', 'danger')
+            print("Lỗi: Thiếu thông tin trường bắt buộc")
             return redirect(url_for('admin.add_product'))
 
         if not category_id or category_id == "":
-            flash('Vui lòng chọn danh mục cho sản phẩm!', 'danger')
+            flash('Vui lòng chọn danh mục sản phẩm!', 'danger')
+            print("Lỗi: Chưa chọn danh mục")
             return redirect(url_for('admin.add_product'))
 
         try:
@@ -162,20 +191,25 @@ def add_product():
 
             if price <= 0 or (discounted_price and discounted_price <= 0):
                 flash('Giá sản phẩm phải lớn hơn 0!', 'danger')
+                print("Lỗi: Giá không hợp lệ")
                 return redirect(url_for('admin.add_product'))
             if stock_quantity < 0:
                 flash('Số lượng tồn kho không thể âm!', 'danger')
+                print("Lỗi: Số lượng tồn kho âm")
                 return redirect(url_for('admin.add_product'))
         except ValueError as e:
             flash(f'Giá hoặc số lượng không hợp lệ: {str(e)}', 'danger')
+            print(f"Lỗi: Giá hoặc số lượng không hợp lệ: {str(e)}")
             return redirect(url_for('admin.add_product'))
 
         image_path = None
         if image_file and image_file.filename:
             try:
                 image_path = save_image(image_file)
+                print(f"Đã cập nhật product.image thành: {image_path}")
             except Exception as e:
                 flash(f'Có lỗi khi lưu hình ảnh: {str(e)}', 'danger')
+                print(f"Lỗi khi lưu ảnh: {str(e)}")
                 return redirect(url_for('admin.add_product'))
 
         product = Product(
@@ -188,7 +222,7 @@ def add_product():
             stock=stock_quantity,
             is_new=is_new,
             is_sale=is_sale,
-            image=image_path or "/static/img/default-product.jpg"
+            image=image_path or "uploads/sanpham/default.jpg"
         )
 
         db.session.add(product)
@@ -196,7 +230,7 @@ def add_product():
         return redirect(url_for('admin.list_products', tab='products'))
 
     categories = Category.query.all()
-    return render_template('add_product.html', categories=categories)
+    return render_template('admin/add_product.html', categories=categories)
 
 @admin_bp.route('/edit_product/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -211,60 +245,75 @@ def edit_product(id):
         discounted_price_input = request.form.get('discounted_price')
         category_id = request.form.get('category_id')
         manufacturer = request.form.get('manufacturer')
-        stock_quantity_input = request.form.get('stock_quantity')
+        stock_quantity_input = request.form.get('stock')
         product.is_new = 'is_new' in request.form
         product.is_sale = 'is_sale' in request.form
 
-        # Kiểm tra đầu vào
         if not product.name or not product.description or not price_input or not manufacturer:
-            flash('Vui lòng điền đầy đủ thông tin bắt buộc!', 'danger')
+            flash('Vui lòng cung cấp đầy đủ thông tin bắt buộc!', 'danger')
+            print("Lỗi: Thiếu thông tin trường bắt buộc")
             return redirect(url_for('admin.edit_product', id=product.id))
 
         if not category_id or category_id == "":
-            flash('Vui lòng chọn danh mục cho sản phẩm!', 'danger')
+            flash('Vui lòng chọn danh mục sản phẩm!', 'danger')
+            print("Lỗi: Chưa chọn danh mục")
             return redirect(url_for('admin.edit_product', id=product.id))
 
         try:
             product.price = float(price_input)
             product.discounted_price = float(discounted_price_input) if discounted_price_input else None
-            product.stock = int(stock_quantity_input) if stock_quantity_input else 0
+            new_stock = int(stock_quantity_input) if stock_quantity_input else 0
 
             if product.price <= 0 or (product.discounted_price and product.discounted_price <= 0):
                 flash('Giá sản phẩm phải lớn hơn 0!', 'danger')
+                print("Lỗi: Giá không hợp lệ")
                 return redirect(url_for('admin.edit_product', id=product.id))
-            if product.stock < 0:
+            if new_stock < 0:
                 flash('Số lượng tồn kho không thể âm!', 'danger')
+                print("Lỗi: Số lượng tồn kho âm")
                 return redirect(url_for('admin.edit_product', id=product.id))
+
+            order_items = OrderItem.query.filter_by(product_id=product.id).join(Order).filter(Order.status.in_(['pending', 'confirmed', 'pickup_pending', 'shipping'])).all()
+            total_ordered_quantity = sum(item.quantity for item in order_items)
+
+            if new_stock < total_ordered_quantity:
+                flash(f'Số lượng tồn kho mới ({new_stock}) nhỏ hơn tổng số lượng trong các đơn hàng đang xử lý ({total_ordered_quantity}). Vui lòng kiểm tra lại!', 'danger')
+                print(f"Lỗi: Số lượng tồn kho mới {new_stock} nhỏ hơn số lượng đơn hàng đang xử lý {total_ordered_quantity}")
+                return redirect(url_for('admin.edit_product', id=product.id))
+
+            product.stock = new_stock
+            product.category_id = int(category_id)
+
+            image_file = request.files.get('image')
+            print(f"Chỉnh sửa sản phẩm - Tệp ảnh: {image_file}, Tên tệp: {image_file.filename if image_file else 'None'}")  # Debug
+            if image_file and image_file.filename:
+                try:
+                    product.image = save_image(image_file)
+                    print(f"Đã cập nhật product.image thành: {product.image}")
+                except Exception as e:
+                    flash(f'Có lỗi khi lưu hình ảnh: {str(e)}', 'danger')
+                    print(f"Lỗi khi lưu ảnh: {str(e)}")
+                    return redirect(url_for('admin.edit_product', id=product.id))
+
+            commit_db_changes('Cập nhật sản phẩm thành công!', 'Có lỗi xảy ra khi cập nhật sản phẩm')
+            return redirect(url_for('admin.list_products', tab='products'))
+
         except ValueError as e:
             flash(f'Giá hoặc số lượng không hợp lệ: {str(e)}', 'danger')
+            print(f"Lỗi: Giá hoặc số lượng không hợp lệ: {str(e)}")
             return redirect(url_for('admin.edit_product', id=product.id))
 
-        product.category_id = int(category_id)
-
-        image_file = request.files.get('image')
-        if image_file and image_file.filename:
-            try:
-                product.image = save_image(image_file)
-            except Exception as e:
-                flash(f'Có lỗi khi lưu hình ảnh: {str(e)}', 'danger')
-                return redirect(url_for('admin.edit_product', id=product.id))
-
-        commit_db_changes('Cập nhật sản phẩm thành công!', 'Có lỗi xảy ra khi cập nhật sản phẩm')
-        return redirect(url_for('admin.list_products', tab='products'))
-
     categories = Category.query.all()
-    return render_template('edit_product.html', product=product, categories=categories)
+    return render_template('admin/edit_product.html', product=product, categories=categories)
 
 @admin_bp.route('/delete_product/<int:id>', methods=['POST'])
 @login_required
 @admin_required
 def delete_product(id):
     product = Product.query.get_or_404(id)
-    # Xóa các bản ghi liên quan trong comments, order_items, và cart_items
     Comment.query.filter_by(product_id=product.id).delete()
     OrderItem.query.filter_by(product_id=product.id).delete()
     CartItem.query.filter_by(product_id=product.id).delete()
-    # Xóa sản phẩm
     db.session.delete(product)
     commit_db_changes('Xóa sản phẩm thành công!', 'Có lỗi xảy ra khi xóa sản phẩm')
     return redirect(url_for('admin.list_products', tab='products'))
@@ -306,9 +355,7 @@ def approve_order(order_id):
 @admin_required
 def delete_order(order_id):
     order = Order.query.get_or_404(order_id)
-    # Xóa các bản ghi trong order_items liên quan đến đơn hàng
     OrderItem.query.filter_by(order_id=order.id).delete()
-    # Xóa đơn hàng
     db.session.delete(order)
     commit_db_changes('Đã xóa đơn hàng thành công!', 'Có lỗi xảy ra khi xóa đơn hàng')
     return redirect(url_for('admin.list_products', tab='orders'))
@@ -342,13 +389,11 @@ def delete_user(id):
     if user.id == current_user.id:
         flash('Bạn không thể xóa chính mình!', 'danger')
         return redirect(url_for('admin.list_products', tab='users'))
-    # Xóa các bản ghi liên quan trong các bảng khác trước khi xóa người dùng
     CartItem.query.filter_by(user_id=user.id).delete()
     Address.query.filter_by(user_id=user.id).delete()
     Comment.query.filter_by(user_id=user.id).delete()
     Reaction.query.filter_by(user_id=user.id).delete()
     Order.query.filter_by(user_id=user.id).delete()
-    # Xóa người dùng
     db.session.delete(user)
     commit_db_changes('Xóa người dùng thành công!', 'Có lỗi xảy ra khi xóa người dùng')
     return redirect(url_for('admin.list_products', tab='users'))
@@ -384,9 +429,7 @@ def edit_comment(id):
 @admin_required
 def delete_comment(id):
     comment = Comment.query.get_or_404(id)
-    # Xóa các bản ghi trong reactions liên quan đến bình luận
     Reaction.query.filter_by(comment_id=comment.id).delete()
-    # Xóa bình luận
     db.session.delete(comment)
     commit_db_changes('Xóa bình luận thành công!', 'Có lỗi xảy ra khi xóa bình luận')
     return redirect(url_for('admin.list_products', tab='comments'))

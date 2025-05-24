@@ -1,13 +1,13 @@
 from app import create_app, db
 from datetime import datetime
-from flask import current_app, g, render_template
+from flask import current_app, g, render_template, url_for, redirect
 from app.utils import get_current_time
 
 app = create_app()
 
 # Cấu hình thư mục upload
 app.config['UPLOAD_FOLDER'] = 'app/static/uploads/sanpham'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'svg', 'heic', 'heif', 'ico', 'avif'}
 
 # Kiểm tra file hợp lệ
 def allowed_file(filename):
@@ -22,10 +22,11 @@ app.jinja_env.filters['format_number'] = format_number
 # Định nghĩa hàm get_order_status_label
 def get_order_status_label(status):
     status_labels = {
-        'pending': 'Chờ xử lý',
-        'processing': 'Đang xử lý',
-        'shipped': 'Đang giao',
-        'delivered': 'Đã giao',
+        'pending': 'Chờ xác nhận',
+        'confirmed': 'Đã xác nhận',
+        'pickup_pending': 'Chờ lấy hàng',
+        'shipping': 'Đang giao hàng',
+        'delivered': 'Đã giao hàng',
         'cancelled': 'Đã hủy'
     }
     return status_labels.get(status, 'Không xác định')
@@ -35,13 +36,10 @@ app.jinja_env.globals['get_order_status_label'] = get_order_status_label
 
 # Giả lập các hàm lấy dữ liệu
 def get_cart_items():
-    return []  # Thay bằng logic thực tế
+    return []
 
 def calculate_total(cart_items):
     return sum(item.subtotal for item in cart_items) if cart_items else 0
-
-def get_orders():
-    return []  # Thay bằng logic thực tế
 
 @app.context_processor
 def inject_now():
@@ -67,8 +65,7 @@ def cart():
 
 @app.route('/cart/history')
 def cart_history():
-    orders = get_orders()
-    return render_template('cart/history.html', orders=orders)
+    return redirect(url_for('orders.my_orders'))
 
 @app.route('/cart/update/<int:item_id>', methods=['POST'])
 def update_cart(item_id):
@@ -84,10 +81,6 @@ def checkout():
 
 @app.route('/products')
 def all_products():
-    pass
-
-@app.route('/cart/order/<int:order_id>')
-def order_detail(order_id):
     pass
 
 @app.route('/')

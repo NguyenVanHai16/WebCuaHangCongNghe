@@ -3,27 +3,32 @@ from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.models import User, Address, Order
 from app import db
-from app.auth.forms import LoginForm, RegisterForm
+from app.auth.forms import LoginForm, RegisterForm, ChangePasswordForm  # Thêm import ChangePasswordForm
 import secrets
 import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 import os
+import logging
 
 auth = Blueprint('auth', __name__)
 
-# Hàm gửi email (sử dụng biến môi trường cho thông tin SMTP)
+# Cấu hình logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+# Hàm gửi email
 def send_reset_email(user, token):
     sender = os.getenv('EMAIL_USER', 'your-email@example.com')
     receiver = user.email
     subject = "TechMart - Yêu cầu đặt lại mật khẩu"
     reset_link = url_for('auth.reset_password', token=token, _external=True)
     body = f"""
-     Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản TechMart của mình.
-     Vui lòng nhấp vào liên kết sau để đặt lại mật khẩu: {reset_link}
-     Liên kết này sẽ hết hạn sau 30 phút.
-     Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.
-     """
+    Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản TechMart của mình.
+    Vui lòng nhấp vào liên kết sau để đặt lại mật khẩu: {reset_link}
+    Liên kết này sẽ hết hạn sau 30 phút.
+    Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.
+    """
 
     msg = MIMEText(body)
     msg['Subject'] = subject
@@ -37,7 +42,7 @@ def send_reset_email(user, token):
             server.sendmail(sender, receiver, msg.as_string())
         return True
     except smtplib.SMTPException as e:
-        print(f"Error sending email: {e}")
+        logger.error(f"Error sending email: {e}")
         return False
 
 @auth.route('/login', methods=['GET', 'POST'])
@@ -48,10 +53,7 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
-        print(f"User found: {user}")
-        print(f"Password entered: {form.password.data}")
-        print(f"Password match: {user and user.check_password(form.password.data)}")  # Sửa: Dùng user.check_password thay vì check_password_hash(user.password, ...)
-        if user and user.check_password(form.password.data):  # Sửa: Dùng user.check_password thay vì check_password_hash(user.password, ...)
+        if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember.data)
             next_page = request.args.get('next')
             return redirect(next_page if next_page else url_for('main.index'))
@@ -68,7 +70,7 @@ def register():
     form = RegisterForm()
     if form.validate_on_submit():
         existing_user = User.query.filter((User.username == form.username.data) |
-                                          (User.email == form.email.data)).first()
+                                         (User.email == form.email.data)).first()
         if existing_user:
             flash('Tên đăng nhập hoặc email đã tồn tại.', 'danger')
             return render_template('auth/register.html', form=form, title='Đăng ký')
@@ -80,7 +82,7 @@ def register():
             last_name=form.last_name.data,
             role='admin' if form.username.data == 'admin_user' else 'user'
         )
-        user.set_password(form.password.data)  # Băm mật khẩu khi đăng ký
+        user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
 
@@ -121,26 +123,19 @@ def profile():
 @auth.route('/change-password', methods=['GET', 'POST'])
 @login_required
 def change_password():
-    if request.method == 'POST':
-        current_password = request.form.get('current_password')
-        new_password = request.form.get('new_password')
-        confirm_password = request.form.get('confirm_password')
-
-        if not current_user.check_password(current_password):  # Sửa: Dùng current_user.check_password thay vì check_password_hash(current_user.password, ...)
+    form = ChangePasswordForm()
+    if form.validate_on_submit():
+        if not current_user.check_password(form.current_password.data):
             flash('Mật khẩu hiện tại không đúng.', 'error')
             return redirect(url_for('auth.change_password'))
 
-        if new_password != confirm_password:
-            flash('Mật khẩu xác nhận không khớp với mật khẩu mới.', 'error')
-            return redirect(url_for('auth.change_password'))
-
-        current_user.set_password(new_password)  # Băm mật khẩu mới
+        current_user.set_password(form.new_password.data)
         db.session.commit()
 
         flash('Đổi mật khẩu thành công!', 'success')
         return redirect(url_for('auth.profile'))
 
-    return render_template('auth/change_password.html', title='Đổi mật khẩu')
+    return render_template('auth/change_password.html', title='Đổi mật khẩu', form=form)
 
 @auth.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
@@ -187,7 +182,7 @@ def reset_password(token):
             flash('Mật khẩu xác nhận không khớp với mật khẩu mới.', 'error')
             return redirect(url_for('auth.reset_password', token=token))
 
-        user.set_password(new_password)  # Băm mật khẩu mới
+        user.set_password(new_password)
         user.reset_token = None
         user.reset_token_expiry = None
         db.session.commit()
@@ -200,16 +195,21 @@ def reset_password(token):
 @auth.route('/add-address', methods=['POST'])
 @login_required
 def add_address():
-    if request.method == 'POST':
-        recipient_name = request.form.get('recipient_name')
-        phone = request.form.get('phone')
-        address = request.form.get('address')
-        is_default = 'true' in request.form.get('is_default', '').lower()
+    recipient_name = request.form.get('recipient_name')
+    phone = request.form.get('phone')
+    address = request.form.get('address')
+    is_default = 'on' == request.form.get('is_default', '').lower()
 
+    # Kiểm tra dữ liệu đầu vào
+    if not all([recipient_name, phone, address]):
+        return jsonify({'error': 'Vui lòng điền đầy đủ các trường bắt buộc'}), 400
+
+    if not phone.isdigit() or len(phone) not in [10, 11]:
+        return jsonify({'error': 'Số điện thoại phải có 10 hoặc 11 chữ số'}), 400
+
+    try:
         if is_default:
-            addresses = Address.query.filter_by(user_id=current_user.id, is_default=True).all()
-            for addr in addresses:
-                addr.is_default = False
+            Address.query.filter_by(user_id=current_user.id, is_default=True).update({'is_default': False})
 
         new_address = Address(
             user_id=current_user.id,
@@ -218,14 +218,17 @@ def add_address():
             address=address,
             is_default=is_default
         )
-
         db.session.add(new_address)
         db.session.commit()
 
-        flash('Thêm địa chỉ thành công!', 'success')
-        return redirect(url_for('auth.profile'))
-
-    return redirect(url_for('auth.profile'))
+        return jsonify({
+            'address_id': new_address.id,
+            'message': 'Thêm địa chỉ thành công'
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error adding address: {e}")
+        return jsonify({'error': f'Có lỗi xảy ra: {str(e)}'}), 500
 
 @auth.route('/get-address/<int:address_id>', methods=['GET'])
 @login_required
@@ -249,72 +252,100 @@ def update_address(address_id):
     address = Address.query.filter_by(id=address_id, user_id=current_user.id).first()
 
     if not address:
-        flash('Không tìm thấy địa chỉ.', 'error')
-        return redirect(url_for('auth.profile'))
+        return jsonify({'error': 'Không tìm thấy địa chỉ'}), 404
 
     recipient_name = request.form.get('recipient_name')
     phone = request.form.get('phone')
     address_text = request.form.get('address')
-    is_default = 'true' in request.form.get('is_default', '').lower()
+    is_default = 'on' == request.form.get('is_default', '').lower()
 
-    if is_default:
-        addresses = Address.query.filter_by(user_id=current_user.id, is_default=True).all()
-        for addr in addresses:
-            if addr.id != address_id:
-                addr.is_default = False
+    if not all([recipient_name, phone, address_text]):
+        return jsonify({'error': 'Vui lòng điền đầy đủ các trường bắt buộc'}), 400
 
-    address.recipient_name = recipient_name
-    address.phone = phone
-    address.address = address_text
-    address.is_default = is_default
+    if not phone.isdigit() or len(phone) not in [10, 11]:
+        return jsonify({'error': 'Số điện thoại phải có 10 hoặc 11 chữ số'}), 400
 
-    db.session.commit()
+    try:
+        if is_default:
+            Address.query.filter_by(user_id=current_user.id, is_default=True).update({'is_default': False})
 
-    flash('Cập nhật địa chỉ thành công!', 'success')
-    return redirect(url_for('auth.profile'))
+        address.recipient_name = recipient_name
+        address.phone = phone
+        address.address = address_text
+        address.is_default = is_default
 
-@auth.route('/delete-address/<int:address_id>', methods=['POST'])
+        db.session.commit()
+
+        return jsonify({'message': 'Cập nhật địa chỉ thành công'}), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error updating address: {e}")
+        return jsonify({'error': f'Có lỗi xảy ra: {str(e)}'}), 500
+
+@auth.route('/delete-address/<int:address_id>', methods=['POST', 'DELETE'])
 @login_required
 def delete_address(address_id):
     address = Address.query.filter_by(id=address_id, user_id=current_user.id).first()
 
     if not address:
-        flash('Không tìm thấy địa chỉ.', 'error')
-        return redirect(url_for('auth.profile'))
+        return jsonify({'error': 'Không tìm thấy địa chỉ'}), 404
 
-    was_default = address.is_default
-    db.session.delete(address)
+    try:
+        was_default = address.is_default
+        db.session.delete(address)
 
-    if was_default:
-        remaining_address = Address.query.filter_by(user_id=current_user.id).first()
-        if remaining_address:
-            remaining_address.is_default = True
+        if was_default:
+            remaining_address = Address.query.filter_by(user_id=current_user.id).first()
+            if remaining_address:
+                remaining_address.is_default = True
 
-    db.session.commit()
+        db.session.commit()
 
-    flash('Đã xóa địa chỉ thành công!', 'success')
-    return redirect(url_for('auth.profile'))
+        return jsonify({'message': 'Xóa địa chỉ thành công'}), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting address: {e}")
+        return jsonify({'error': f'Có lỗi xảy ra: {str(e)}'}), 500
 
 @auth.route('/update-profile', methods=['POST'])
 @login_required
 def update_profile():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        first_name = request.form.get('first_name')
-        last_name = request.form.get('last_name')
+    email = request.form.get('email')
+    first_name = request.form.get('first_name', '')
+    last_name = request.form.get('last_name', '')
 
-        existing_user = User.query.filter(User.email == email, User.id != current_user.id).first()
-        if existing_user:
-            flash('Email này đã được sử dụng bởi người dùng khác.', 'error')
-            return redirect(url_for('auth.profile'))
+    # Kiểm tra dữ liệu đầu vào
+    if not email:
+        logger.warning("Missing email in update-profile request")
+        return jsonify({'error': 'Vui lòng điền email'}), 400
 
-        current_user.email = email
-        current_user.first_name = first_name
-        current_user.last_name = last_name
+    # Kiểm tra email hợp lệ
+    if '@' not in email or '.' not in email:
+        logger.warning(f"Invalid email format: {email}")
+        return jsonify({'error': 'Email không hợp lệ'}), 400
+
+    # Kiểm tra email trùng lặp
+    existing_user = User.query.filter(User.email == email, User.id != current_user.id).first()
+    if existing_user:
+        logger.warning(f"Email already used: {email}")
+        return jsonify({'error': 'Email này đã được sử dụng bởi người dùng khác'}), 400
+
+    try:
+        logger.debug(f"Updating user {current_user.id}: email={email}, first_name={first_name}, last_name={last_name}")
+        current_user.email = email.strip()
+        current_user.first_name = first_name.strip() if first_name else None
+        current_user.last_name = last_name.strip() if last_name else None
 
         db.session.commit()
+        logger.info(f"User {current_user.id} updated successfully")
 
-        flash('Cập nhật thông tin thành công!', 'success')
-        return redirect(url_for('auth.profile'))
-
-    return redirect(url_for('auth.profile'))
+        return jsonify({
+            'message': 'Cập nhật thông tin thành công',
+            'email': current_user.email,
+            'first_name': current_user.first_name or '',
+            'last_name': current_user.last_name or ''
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error updating profile for user {current_user.id}: {e}")
+        return jsonify({'error': f'Có lỗi xảy ra khi cập nhật thông tin: {str(e)}'}), 500
