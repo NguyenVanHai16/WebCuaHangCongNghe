@@ -67,17 +67,16 @@ def cart():
 def cart_history():
     return redirect(url_for('orders.my_orders'))
 
-@app.route('/cart/update/<int:item_id>', methods=['POST'])
-def update_cart(item_id):
-    pass
-
-@app.route('/cart/remove/<int:item_id>', methods=['POST'])
-def remove_from_cart(item_id):
-    pass
-
 @app.route('/checkout')
 def checkout():
-    pass
+    cart_items = get_cart_items()
+    if not cart_items:
+        return redirect(url_for('cart'))
+    
+    # Xử lý logic thanh toán ở đây
+    # ...
+    
+    return redirect(url_for('orders.my_orders'))
 
 @app.route('/products')
 def all_products():

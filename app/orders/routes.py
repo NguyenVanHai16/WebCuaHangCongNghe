@@ -1,51 +1,45 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_required, current_user
 from app import db
 from app.models import Order, OrderStatus
 from datetime import datetime
 
-orders_bp = Blueprint('orders', __name__)
+order_management = Blueprint('order_management', __name__)
 
-@orders_bp.route('/my-orders')
+@order_management.route('/my-orders')
 @login_required
 def my_orders():
-    # Lấy tất cả đơn hàng của người dùng hiện tại, sắp xếp theo thời gian tạo giảm dần
-    orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.created_at.desc()).all()
+    try:
+        user_orders = Order.query.filter_by(
+            user_id=current_user.id
+        ).order_by(Order.created_at.desc()).all()
+        
+        current_app.logger.info(f"Found {len(user_orders)} orders for user {current_user.id}")
+        
+        return render_template('orders/my_orders.html', 
+                             orders=user_orders,
+                             title='Đơn hàng của tôi')
+    except Exception as e:
+        current_app.logger.error(f"Error fetching orders: {str(e)}")
+        return render_template('orders/my_orders.html', 
+                             orders=[],
+                             title='Đơn hàng của tôi')
 
-    # Danh sách trạng thái hợp lệ
-    status_labels = {
-        'pending': 'Chờ xác nhận',
-        'confirmed': 'Đã xác nhận',
-        'pickup_pending': 'Chờ lấy hàng',
-        'shipping': 'Đang giao hàng',
-        'delivered': 'Đã giao hàng',
-        'cancelled': 'Đã hủy'
-    }
-
-    # Tạo dictionary chứa danh sách đơn hàng theo trạng thái
-    orders_by_status = {status: [] for status in status_labels}
-    for order in orders:
-        if order.status in orders_by_status:
-            orders_by_status[order.status].append(order)
-
-    # Render template với orders_by_status và status_labels
-    return render_template('orders/my_orders.html', title='Đơn mua', orders_by_status=orders_by_status, status_labels=status_labels)
-
-@orders_bp.route('/orders')  # Thêm tuyến đường mới
+@order_management.route('/orders')  # Thêm tuyến đường mới
 @login_required
 def orders():
     return my_orders()  # Gọi hàm my_orders để sử dụng cùng logic
 
-@orders_bp.route('/orders/<int:order_id>')
+@order_management.route('/orders/<int:order_id>')
 @login_required
 def order_detail(order_id):
     order = Order.query.get_or_404(order_id)
     if order.user_id != current_user.id and not current_user.is_admin:
         flash('Bạn không có quyền xem đơn hàng này!', 'danger')
-        return redirect(url_for('orders.my_orders'))
+        return redirect(url_for('order_management.my_orders'))
     return render_template('orders/order_detail.html', order=order)
 
-@orders_bp.route('/orders/<int:order_id>/cancel', methods=['POST'])
+@order_management.route('/orders/<int:order_id>/cancel', methods=['POST'])
 @login_required
 def cancel_order(order_id):
     order = Order.query.get_or_404(order_id)
@@ -53,12 +47,12 @@ def cancel_order(order_id):
     # Kiểm tra xem đơn hàng có phải của user hiện tại hoặc admin không
     if order.user_id != current_user.id and not current_user.is_admin:
         flash('Bạn không có quyền hủy đơn hàng này!', 'danger')
-        return redirect(url_for('orders.my_orders'))
+        return redirect(url_for('order_management.my_orders'))
 
     # Kiểm tra xem đơn hàng có thể hủy không
     if order.status != OrderStatus.PENDING.value:
         flash('Chỉ có thể hủy đơn hàng đang chờ xác nhận!', 'danger')
-        return redirect(url_for('orders.my_orders'))
+        return redirect(url_for('order_management.my_orders'))
 
     # Cập nhật trạng thái đơn hàng
     order.status = OrderStatus.CANCELLED.value
@@ -71,7 +65,7 @@ def cancel_order(order_id):
     db.session.commit()
 
     flash('Đơn hàng đã được hủy thành công!', 'success')
-    return redirect(url_for('orders.my_orders'))
+    return redirect(url_for('order_management.my_orders'))
 
 # Blueprint cho admin
 admin_bp = Blueprint('admin', __name__)
@@ -193,3 +187,29 @@ def delete_order(order_id):
 
     flash('Đơn hàng đã được xóa thành công!', 'success')
     return redirect(url_for('admin.admin_dashboard', tab='orders'))
+
+from flask import flash, redirect, url_for
+from flask_login import login_required, current_user
+from . import orders
+from app.models import Order, OrderStatus
+
+@orders.route('/cancel/<int:order_id>', methods=['POST'])
+@login_required
+def cancel_order(order_id):
+    order = Order.query.get_or_404(order_id)
+    
+    # Kiểm tra quyền hủy đơn hàng
+    if order.user_id != current_user.id and not current_user.is_admin:
+        flash('Bạn không có quyền hủy đơn hàng này!', 'danger')
+        return redirect(url_for('orders.my_orders'))
+    
+    # Chỉ cho phép hủy đơn hàng ở trạng thái pending hoặc confirmed
+    if order.status not in ['pending', 'confirmed']:
+        flash('Không thể hủy đơn hàng ở trạng thái này!', 'danger')
+        return redirect(url_for('orders.my_orders'))
+    
+    order.status = 'cancelled'
+    db.session.commit()
+    
+    flash('Đơn hàng đã được hủy thành công!', 'success')
+    return redirect(url_for('orders.my_orders'))

@@ -1,0 +1,44 @@
+.order-status-timeline {
+    display: flex;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.status-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.status-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #e0e0e0;
+    margin-bottom: 5px;
+}
+
+.status-line {
+    flex: 1;
+    height: 3px;
+    background-color: #e0e0e0;
+}
+
+.status-step.active .status-dot {
+    background-color: #007bff;
+}
+
+.status-step.completed .status-dot,
+.status-line.completed {
+    background-color: #28a745;
+}
+
+.status-label {
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+.order-card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}

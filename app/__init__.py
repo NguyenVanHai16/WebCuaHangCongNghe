@@ -16,7 +16,8 @@ db = SQLAlchemy()
 migrate = Migrate()
 
 def create_app():
-    app = Flask(__name__, template_folder='templates')
+    app = Flask(__name__)
+    template_folder='templates'
 
     # Cấu hình ứng dụng
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'techmart-default-key')
@@ -42,14 +43,14 @@ def create_app():
         from app.main.routes import main
         from app.products.routes import products
         from app.cart.routes import cart
-        from app.orders.routes import orders_bp
+        from app.orders import orders  # Sửa import này
 
         app.register_blueprint(admin_bp, url_prefix='/admin')
         app.register_blueprint(auth)
         app.register_blueprint(main)
         app.register_blueprint(products)
         app.register_blueprint(cart)
-        app.register_blueprint(orders_bp)
+        app.register_blueprint(orders, url_prefix='/orders')  # Sửa đăng ký này
         logger.debug("Blueprints registered successfully")
 
         # Kiểm tra các route trong blueprint products

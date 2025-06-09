@@ -1,7 +1,5 @@
 from flask import Blueprint
 
-auth = Blueprint('auth', __name__,
-                url_prefix='/auth',
-                template_folder='templates/auth')  # Thêm đường dẫn template
+orders = Blueprint('orders', __name__)
 
 from . import routes
