@@ -23,10 +23,7 @@
         <div class="checkout-form">
             <h2 style="margin-bottom: 1.5rem;">Thông tin thanh toán</h2>
             <form action="{{ url_for('cart.checkout') }}" method="POST">
-                <input type="hidden" name="csrf_token" value="{{ session['csrf_token'] }}">
-                {% for item in cart_items %}
-                <input type="hidden" name="selected_items" value="{{ item.id }}">
-                {% endfor %}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <div class="form-group">
                     <label for="customer_name" class="form-label">Tên khách hàng</label>
                     <input type="text" id="customer_name" name="customer_name" class="form-control" required>
@@ -94,7 +91,7 @@
         <div class="cart-summary">
             <h3 class="cart-summary-title">Tóm tắt đơn hàng</h3>
             <div style="margin-bottom: 1.5rem;">
-                {% for item in cart_items %}
+                {% for item in checkout_items %}
                 <div style="display: flex; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
                     <img src="{{ url_for('static', filename=item.product.image.lstrip('/static/')) if item.product.image else url_for('static', filename='Uploads/sanpham/default.jpg') }}"
                          alt="{{ item.product.name }}"

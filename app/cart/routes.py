@@ -10,7 +10,6 @@ logging.basicConfig(level=logging.DEBUG)
 
 cart = Blueprint('cart', __name__)
 
-
 @cart.route('/cart')
 @login_required
 def view_cart():
@@ -25,17 +24,21 @@ def view_cart():
         session['csrf_token'] = secrets.token_hex(16)
     return render_template('cart/cart.html', title='Giỏ hàng', cart_items=cart_items, total=total)
 
-
 @cart.route('/cart/add/<int:product_id>', methods=['POST'])
 @login_required
 def add_to_cart(product_id):
     logging.debug(f"Add to cart: product_id={product_id}, headers={request.headers}")
+    logging.debug(f"Current user: {current_user.is_authenticated}, User ID: {current_user.id if current_user.is_authenticated else 'None'}")
+    if not current_user.is_authenticated:
+        return jsonify({'success': False, 'message': 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.'}), 401
     product = Product.query.get_or_404(product_id)
     quantity = int(request.form.get('quantity', 1))
 
     # Kiểm tra CSRF token
-    form_csrf_token = request.form.get('csrf_token')
+    form_csrf_token = request.form.get('csrf_token') or request.headers.get('X-CSRF-Token')
     session_csrf_token = session.get('csrf_token')
+    logging.debug(f"Session CSRF token: {session_csrf_token}, Form/Header CSRF token: {form_csrf_token}")
+    logging.debug(f"Request form: {request.form}")
     if not form_csrf_token or form_csrf_token != session_csrf_token:
         logging.debug("CSRF token validation failed")
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.accept_mimetypes.accept_json:
@@ -61,7 +64,14 @@ def add_to_cart(product_id):
         cart_item = CartItem(user_id=current_user.id, product_id=product_id, quantity=quantity)
         db.session.add(cart_item)
 
-    db.session.commit()
+    try:
+        db.session.commit()
+        logging.debug(f"Successfully added product {product_id} to cart for user {current_user.id}")
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Failed to commit cart item: {str(e)}")
+        return jsonify({'success': False, 'message': 'Lỗi khi lưu vào giỏ hàng.'}), 500
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.accept_mimetypes.accept_json:
         return jsonify({
             'success': True,
@@ -71,23 +81,31 @@ def add_to_cart(product_id):
     flash(f'Đã thêm {product.name} vào giỏ hàng.', 'success')
     return redirect(url_for('cart.view_cart'))
 
-
-@cart.route('/cart/buy-now/<int:product_id>', methods=['GET'])
+@cart.route('/cart/buy-now/<int:product_id>', methods=['POST'])
 @login_required
 def buy_now(product_id):
     product = Product.query.get_or_404(product_id)
-    quantity = int(request.args.get('quantity', 1))
+    quantity = int(request.form.get('quantity', 1))
+    form_csrf_token = request.form.get('csrf_token') or request.headers.get('X-CSRF-Token')
+    session_csrf_token = session.get('csrf_token')
+
+    if not form_csrf_token or form_csrf_token != session_csrf_token:
+        logging.debug("CSRF token validation failed")
+        return jsonify({'success': False, 'message': 'Lỗi bảo mật: CSRF token không hợp lệ.'}), 403
+
     if quantity <= 0 or quantity > product.stock:
-        flash('Số lượng không hợp lệ hoặc vượt quá tồn kho!', 'danger')
-        return redirect(url_for('products.product_detail', product_id=product_id))
+        return jsonify({'success': False, 'message': 'Số lượng không hợp lệ hoặc vượt quá tồn kho!'}), 400
+
+    # Xóa giỏ hàng hiện tại
     CartItem.query.filter_by(user_id=current_user.id).delete()
     cart_item = CartItem(user_id=current_user.id, product_id=product_id, quantity=quantity)
     db.session.add(cart_item)
     db.session.commit()
-    session['selected_item_ids'] = [str(cart_item.id)]
-    flash(f'Đã chọn {product.name} để mua ngay.', 'success')
-    return redirect(url_for('cart.checkout'))
 
+    # Lưu ID sản phẩm được chọn vào session
+    session['selected_item_ids'] = [str(cart_item.id)]
+
+    return jsonify({'success': True, 'message': f'Đã chọn {product.name} để mua ngay.'})
 
 @cart.route('/cart/update/<int:item_id>', methods=['POST'])
 @login_required
@@ -102,8 +120,14 @@ def update_cart(item_id):
         return jsonify({'success': False, 'message': 'Số lượng vượt quá tồn kho!'}), 400
     cart_item.quantity = quantity
     db.session.commit()
-    return jsonify({'success': True, 'message': 'Giỏ hàng đã được cập nhật.'})
-
+    price = cart_item.product.discounted_price or cart_item.product.price
+    subtotal = price * quantity
+    return jsonify({
+        'success': True,
+        'message': 'Giỏ hàng đã được cập nhật.',
+        'subtotal': subtotal,
+        'quantity': quantity
+    })
 
 @cart.route('/cart/remove/<int:item_id>', methods=['POST'])
 @login_required
@@ -115,7 +139,6 @@ def remove_from_cart(item_id):
     db.session.commit()
     return jsonify({'success': True, 'message': 'Sản phẩm đã được xóa khỏi giỏ hàng.'})
 
-
 @cart.route('/cart/clear')
 @login_required
 def clear_cart():
@@ -124,69 +147,41 @@ def clear_cart():
     flash('Giỏ hàng đã được xóa.', 'success')
     return redirect(url_for('cart.view_cart'))
 
-
 @cart.route('/checkout', methods=['GET', 'POST'])
 @login_required
 def checkout():
     logging.debug(f"Request method: {request.method}")
     logging.debug(f"Form data: {request.form}")
+    logging.debug(f"Headers: {request.headers}")
 
     # Kiểm tra CSRF token
     if request.method == 'POST':
-        form_csrf_token = request.form.get('csrf_token')
+        form_csrf_token = request.form.get('csrf_token') or request.headers.get('X-CSRF-Token')
         session_csrf_token = session.get('csrf_token')
-        logging.debug(f"Form CSRF token: {form_csrf_token}, Session CSRF token: {session_csrf_token}")
+        logging.debug(f"Form/Header CSRF token: {form_csrf_token}, Session CSRF token: {session_csrf_token}")
         if not form_csrf_token or form_csrf_token != session_csrf_token:
             logging.debug("CSRF token validation failed")
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'Lỗi bảo mật: CSRF token không hợp lệ.'}), 403
             flash('Lỗi bảo mật: CSRF token không hợp lệ.', 'danger')
             return redirect(url_for('cart.view_cart'))
 
-    # Lấy danh sách ID các mục được chọn từ form hoặc session
-    selected_item_ids = request.form.getlist('selected_items') if request.method == 'POST' else session.get(
-        'selected_item_ids', [])
-    logging.debug(f"Selected item IDs: {selected_item_ids}")
-
-    if request.method == 'POST' and not selected_item_ids:
-        logging.debug("No items selected, redirecting to cart")
-        flash('Vui lòng chọn ít nhất một sản phẩm để thanh toán.', 'warning')
-        return redirect(url_for('cart.view_cart'))
-
-    if selected_item_ids:
-        try:
-            cart_items = CartItem.query.filter(
-                CartItem.user_id == current_user.id,
-                CartItem.id.in_([int(id) for id in selected_item_ids])
-            ).all()
-            logging.debug(f"Cart items: {[item.id for item in cart_items]}")
-        except ValueError as e:
-            logging.error(f"Invalid item ID format: {e}")
-            flash('Dữ liệu sản phẩm không hợp lệ.', 'danger')
+        # Lưu danh sách selected_item_ids vào session
+        selected_item_ids = request.form.getlist('selected_items[]')
+        logging.debug(f"Selected item IDs from form: {selected_item_ids}")
+        if not selected_item_ids:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'Vui lòng chọn ít nhất một sản phẩm để thanh toán.'}), 400
+            flash('Vui lòng chọn ít nhất một sản phẩm để thanh toán.', 'warning')
             return redirect(url_for('cart.view_cart'))
-    else:
-        cart_items = []
-        logging.debug("No selected items, redirecting to cart")
-        flash('Vui lòng chọn sản phẩm để thanh toán.', 'warning')
-        return redirect(url_for('cart.view_cart'))
 
-    if not cart_items:
-        logging.debug("No cart items found, redirecting to cart")
-        flash('Giỏ hàng của bạn đang trống hoặc các sản phẩm đã chọn không hợp lệ.', 'warning')
-        return redirect(url_for('cart.view_cart'))
+        session['selected_item_ids'] = selected_item_ids
 
-    total = 0
-    for item in cart_items:
-        if item.product.discounted_price:
-            total += item.product.discounted_price * item.quantity
-        else:
-            total += item.product.price * item.quantity
+        # Nếu là AJAX request, trả về JSON để client chuyển hướng
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': True, 'message': 'Danh sách sản phẩm đã được chọn để thanh toán.'})
 
-    if 'csrf_token' not in session:
-        session['csrf_token'] = secrets.token_hex(16)
-    csrf_token = session['csrf_token']
-    logging.debug(f"CSRF token: {csrf_token}")
-
-    if request.method == 'POST':
-        logging.debug("Processing checkout form submission")
+        # Xử lý thanh toán (form submission không phải AJAX)
         shipping_address = request.form.get('shipping_address')
         payment_method = request.form.get('payment_method')
         customer_name = request.form.get('customer_name')
@@ -196,12 +191,43 @@ def checkout():
             logging.debug(f"Missing required fields: shipping_address={bool(shipping_address)}, "
                           f"payment_method={bool(payment_method)}, customer_name={bool(customer_name)}, "
                           f"phone_number={bool(phone_number)}")
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'Vui lòng cung cấp đầy đủ thông tin thanh toán.'}), 400
             flash('Vui lòng cung cấp đầy đủ thông tin thanh toán.', 'danger')
             return redirect(url_for('cart.checkout'))
 
-        # Kết hợp customer_name và phone_number vào shipping_address
-        full_shipping_address = f"Tên: {customer_name}, SĐT: {phone_number}, Địa chỉ: {shipping_address}"
+        # Lấy danh sách sản phẩm được chọn
+        try:
+            checkout_items = CartItem.query.filter(
+                CartItem.user_id == current_user.id,
+                CartItem.id.in_([int(id) for id in selected_item_ids])
+            ).all()
+            logging.debug(f"Checkout items: {[item.id for item in checkout_items]}")
+        except ValueError as e:
+            logging.error(f"Invalid item ID format: {e}")
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'Dữ liệu sản phẩm không hợp lệ.'}), 400
+            flash('Dữ liệu sản phẩm không hợp lệ.', 'danger')
+            return redirect(url_for('cart.view_cart'))
 
+        if not checkout_items:
+            logging.debug(f"No matching checkout items found for IDs: {selected_item_ids}")
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'Giỏ hàng của bạn trống hoặc sản phẩm không hợp lệ.'}), 404
+            flash('Giỏ hàng của bạn đang trống hoặc các sản phẩm đã chọn không hợp lệ.', 'warning')
+            return redirect(url_for('cart.view_cart'))
+
+        # Tính tổng tiền
+        total = 0
+        for item in checkout_items:
+            if item.product.discounted_price:
+                total += item.product.discounted_price * item.quantity
+            else:
+                total += item.product.price * item.quantity
+            logging.debug(f"Adding to total: {item.product.name} - {total} ₫")
+
+        # Tạo đơn hàng
+        full_shipping_address = f"Tên: {customer_name}, SĐT: {phone_number}, Địa chỉ: {shipping_address}"
         order = Order(
             user_id=current_user.id,
             total_amount=total,
@@ -212,7 +238,7 @@ def checkout():
         db.session.add(order)
         db.session.flush()
 
-        for item in cart_items:
+        for item in checkout_items:
             price = item.product.discounted_price or item.product.price
             order_item = OrderItem(
                 order_id=order.id,
@@ -222,7 +248,7 @@ def checkout():
             )
             db.session.add(order_item)
 
-        # Xóa toàn bộ giỏ hàng của người dùng
+        # Xóa toàn bộ giỏ hàng
         CartItem.query.filter_by(user_id=current_user.id).delete()
         db.session.commit()
 
@@ -231,9 +257,44 @@ def checkout():
         flash('Đơn hàng của bạn đã được tạo thành công!', 'success')
         return redirect(url_for('cart.orders'))
 
-    return render_template('cart/checkout.html', title='Thanh toán', cart_items=cart_items, total=total,
-                           csrf_token=csrf_token)
+    # GET request: Hiển thị trang checkout
+    selected_item_ids = session.get('selected_item_ids', [])
+    logging.debug(f"Selected item IDs from session (GET): {selected_item_ids}")
 
+    if selected_item_ids:
+        try:
+            checkout_items = CartItem.query.filter(
+                CartItem.user_id == current_user.id,
+                CartItem.id.in_([int(id) for id in selected_item_ids])
+            ).all()
+            logging.debug(f"Checkout items for GET: {[item.id for item in checkout_items]}")
+        except ValueError as e:
+            logging.error(f"Invalid item ID format: {e}")
+            flash('Dữ liệu sản phẩm không hợp lệ.', 'danger')
+            return redirect(url_for('cart.view_cart'))
+    else:
+        checkout_items = []
+        logging.debug("No selected items in session for GET request")
+
+    if not checkout_items:
+        flash('Giỏ hàng của bạn đang trống hoặc các sản phẩm không hợp lệ.', 'warning')
+        return redirect(url_for('cart.view_cart'))
+
+    total = 0
+    for item in checkout_items:
+        if item.product.discounted_price:
+            total += item.product.discounted_price * item.quantity
+        else:
+            total += item.product.price * item.quantity
+        logging.debug(f"Adding to total (GET): {item.product.name} - {total} ₫")
+
+    if 'csrf_token' not in session:
+        session['csrf_token'] = secrets.token_hex(16)
+    csrf_token = session['csrf_token']
+    logging.debug(f"CSRF token: {csrf_token}")
+
+    return render_template('cart/checkout.html', title='Thanh toán', checkout_items=checkout_items, total=total,
+                           csrf_token=csrf_token)
 
 @cart.route('/order-confirmation/<int:order_id>')
 @login_required
@@ -245,7 +306,6 @@ def order_confirmation(order_id):
     order_items = OrderItem.query.filter_by(order_id=order.id).all()
     return render_template('cart/order_confirmation.html', title='Xác nhận đơn hàng', order=order,
                            order_items=order_items)
-
 
 @cart.route('/orders')
 @login_required
@@ -259,18 +319,13 @@ def orders():
         "cancelled": "Đã hủy"
     }
     all_orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.created_at.desc()).all()
-    current_orders = [order for order in all_orders if order.status not in ['delivered', 'cancelled']]
-    orders_by_status = {
-        status: [order for order in current_orders if order.status == status]
-        for status in status_labels.keys()
-    }
+    logging.debug(f"Orders found for user {current_user.id}: {[order.id for order in all_orders]}")
 
     def get_order_status_label(status):
         return status_labels.get(status, "Không xác định")
 
-    return render_template('orders/my_orders.html', title='Đơn mua của tôi', orders_by_status=orders_by_status,
+    return render_template('orders/my_orders.html', title='Đơn mua của tôi', orders=all_orders,
                            status_labels=status_labels, get_order_status_label=get_order_status_label)
-
 
 @cart.route('/order_history')
 @login_required
@@ -279,7 +334,6 @@ def order_history():
     orders = Order.query.filter_by(user_id=current_user.id).filter(
         Order.status.in_(['delivered', 'cancelled'])).order_by(Order.created_at.desc()).paginate(page=page, per_page=10)
     return render_template('cart/order_history.html', title='Lịch sử đơn hàng', orders=orders)
-
 
 @cart.route('/orders/<int:order_id>')
 @login_required
@@ -291,7 +345,6 @@ def order_detail(order_id):
     order_items = OrderItem.query.filter_by(order_id=order.id).all()
     return render_template('cart/order_detail.html', title=f'Đơn hàng #{order.id}', order=order,
                            order_items=order_items)
-
 
 @cart.route('/cancel_order/<int:order_id>', methods=['POST'])
 @login_required
@@ -307,7 +360,6 @@ def cancel_order(order_id):
     db.session.commit()
     flash('Đơn hàng đã được hủy thành công.', 'success')
     return redirect(url_for('cart.orders'))
-
 
 @cart.route('/get-addresses', methods=['GET'])
 @login_required

@@ -371,9 +371,9 @@
                 <div class="related-product-card">
                     <a href="{{ url_for('products.product_detail', product_id=related.id) }}" class="product-card-link">
                         <div class="product-image">
-                            <img src="{{ url_for('static', filename=related.image.lstrip('/static/')) if related.image else url_for('static', filename='uploads/sanpham/default.jpg') }}"
+                            <img src="{{ url_for('static', filename=related.image.lstrip('/static/')) if related.image else url_for('static', filename='Uploads/sanpham/default.jpg') }}"
                                  alt="{{ related.name }}"
-                                 onerror="this.src='{{ url_for('static', filename='uploads/sanpham/default.jpg') }}'">
+                                 onerror="this.src='{{ url_for('static', filename='Uploads/sanpham/default.jpg') }}'">
                         </div>
                         <div class="product-details">
                             <h3 class="product-title">{{ related.name }}</h3>
@@ -402,537 +402,429 @@
 </section>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Xử lý nút Thêm vào giỏ hàng
-        const addToCartButton = document.querySelector('.btn-add-to-cart');
-        if (addToCartButton) {
-            addToCartButton.addEventListener('click', function() {
-                const productId = parseInt(this.getAttribute('data-product-id'));
-                const quantityInput = document.querySelector('#quantity');
-                const quantity = parseInt(quantityInput.value);
+document.addEventListener('DOMContentLoaded', function() {
+    // Xử lý nút Thêm vào giỏ hàng
+    const addToCartButton = document.querySelector('.btn-add-to-cart');
+    if (addToCartButton) {
+        addToCartButton.addEventListener('click', function() {
+            const productId = parseInt(this.getAttribute('data-product-id'));
+            const quantityInput = document.querySelector('#quantity');
+            const quantity = parseInt(quantityInput.value);
+            const csrfToken = '{{ session["csrf_token"] }}';
 
-                console.log('Adding to cart:', { productId, quantity });
+            console.log('Adding to cart:', { productId, quantity, csrfToken });
 
-                if (quantity < 1 || isNaN(quantity)) {
-                    alert('Vui lòng nhập số lượng hợp lệ!');
-                    return;
-                }
-
-                if (quantity > parseInt(quantityInput.getAttribute('max'))) {
-                    alert('Số lượng vượt quá tồn kho!');
-                    return;
-                }
-
-                // Tạo URL động với product_id
-                const url = `/cart/add/${productId}`;
-                fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `quantity=${quantity}`
-                })
-                .then(response => {
-                    console.log('Response status:', response.status);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Response data:', data);
-                    if (data.success) {
-                        alert('Sản phẩm đã được thêm vào giỏ hàng!');
-                    } else {
-                        alert(data.message || 'Không thể thêm sản phẩm vào giỏ hàng!');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Có lỗi xảy ra: ' + error.message);
-                });
-            });
-        }
-
-        // Xử lý nút Mua ngay
-        const buyNowButton = document.querySelector('.btn-buy-now');
-        if (buyNowButton) {
-            buyNowButton.addEventListener('click', function() {
-                const productId = parseInt(this.getAttribute('data-product-id'));
-                const quantityInput = document.querySelector('#quantity');
-                const quantity = parseInt(quantityInput.value);
-
-                if (quantity < 1 || isNaN(quantity)) {
-                    alert('Vui lòng nhập số lượng hợp lệ!');
-                    return;
-                }
-
-                if (quantity > parseInt(quantityInput.getAttribute('max'))) {
-                    alert('Số lượng vượt quá tồn kho!');
-                    return;
-                }
-
-                console.log('Buying now:', { productId, quantity });
-
-                // Chuyển hướng đến route buy_now với số lượng qua query parameter
-                window.location.href = `/cart/buy-now/${productId}?quantity=${quantity}`;
-            });
-        }
-
-        // Toggle reviews section
-        const reviewToggle = document.querySelector('.review-toggle');
-        const reviewsSection = document.querySelector('.reviews-section');
-        if (reviewToggle && reviewsSection) {
-            reviewToggle.addEventListener('click', function() {
-                reviewsSection.classList.toggle('visible');
-                if (reviewsSection.classList.contains('visible')) {
-                    reviewsSection.scrollIntoView({ behavior: 'smooth' });
-                }
-            });
-        }
-
-        // Rating input functionality
-        const ratingInputs = document.querySelectorAll('.rating-input');
-        ratingInputs.forEach(input => {
-            const stars = input.querySelectorAll('.star');
-            stars.forEach(star => {
-                star.addEventListener('click', function() {
-                    const value = parseInt(this.getAttribute('data-value'));
-                    stars.forEach(s => {
-                        const starValue = parseInt(s.getAttribute('data-value'));
-                        if (starValue <= value) {
-                            s.classList.remove('empty');
-                            s.classList.add('filled');
-                        } else {
-                            s.classList.remove('filled');
-                            s.classList.add('empty');
-                        }
-                    });
-
-                    const group = input.getAttribute('data-group');
-                    let hiddenInput = input.querySelector(`input[name="${group === 'overall' ? 'rating' : 'criteria_' + group}"]`);
-                    if (!hiddenInput) {
-                        hiddenInput = document.createElement('input');
-                        hiddenInput.type = 'hidden';
-                        hiddenInput.name = group === 'overall' ? 'rating' : 'criteria_' + group;
-                        input.appendChild(hiddenInput);
-                    }
-                    hiddenInput.value = value;
-                });
-
-                star.addEventListener('mouseover', function() {
-                    const hoverValue = parseInt(this.getAttribute('data-value'));
-                    stars.forEach(s => {
-                        const starValue = parseInt(s.getAttribute('data-value'));
-                        if (starValue <= hoverValue) {
-                            s.classList.add('hover');
-                        } else {
-                            s.classList.remove('hover');
-                        }
-                    });
-                });
-
-                star.addEventListener('mouseout', function() {
-                    stars.forEach(s => {
-                        s.classList.remove('hover');
-                    });
-                });
-            });
-        });
-
-        // Emoji picker functionality (textarea)
-        function attachEmojiListeners() {
-            const emojiToggles = document.querySelectorAll('.emoji-toggle');
-            emojiToggles.forEach(toggle => {
-                toggle.removeEventListener('click', handleEmojiToggleClick);
-                toggle.addEventListener('click', handleEmojiToggleClick);
-            });
-
-            const emojis = document.querySelectorAll('.emoji');
-            emojis.forEach(emoji => {
-                emoji.removeEventListener('click', handleEmojiClick);
-                emoji.addEventListener('click', handleEmojiClick);
-            });
-
-            document.removeEventListener('click', handleClickOutsideEmoji);
-            document.addEventListener('click', handleClickOutsideEmoji);
-        }
-
-        function handleEmojiToggleClick() {
-            const container = this.nextElementSibling;
-            container.classList.toggle('show');
-        }
-
-        function handleEmojiClick() {
-            const emojiChar = this.getAttribute('data-emoji');
-            const container = this.closest('.emoji-picker');
-            const textarea = container.parentElement.querySelector('textarea');
-
-            if (textarea) {
-                const cursorPos = textarea.selectionStart;
-                const textBefore = textarea.value.substring(0, cursorPos);
-                const textAfter = textarea.value.substring(cursorPos);
-                textarea.value = textBefore + emojiChar + textAfter;
-                textarea.selectionStart = cursorPos + emojiChar.length;
-                textarea.selectionEnd = cursorPos + emojiChar.length;
-
-                const inputEvent = new Event('input', { bubbles: true });
-                textarea.dispatchEvent(inputEvent);
-
-                textarea.focus();
+            if (quantity < 1 || isNaN(quantity)) {
+                alert('Vui lòng nhập số lượng hợp lệ!');
+                return;
             }
 
-            container.classList.remove('show');
-        }
-
-        function handleClickOutsideEmoji(e) {
-            const emojiContainers = document.querySelectorAll('.emoji-container');
-            emojiContainers.forEach(container => {
-                const toggle = container.previousElementSibling;
-                if (!toggle.contains(e.target) && !container.contains(e.target)) {
-                    container.classList.remove('show');
-                }
-            });
-        }
-
-        // Reaction emoji list functionality (click to show)
-        function attachReactionButtonListeners() {
-            const reactionButtons = document.querySelectorAll('.reaction-btn');
-            reactionButtons.forEach(button => {
-                button.removeEventListener('click', handleReactionButtonClick);
-                button.addEventListener('click', handleReactionButtonClick);
-            });
-
-            const emojiOptions = document.querySelectorAll('.emoji-option');
-            emojiOptions.forEach(option => {
-                option.removeEventListener('click', handleEmojiOptionClick);
-                option.addEventListener('click', handleEmojiOptionClick);
-            });
-
-            document.removeEventListener('click', handleClickOutsideEmojiList);
-            document.addEventListener('click', handleClickOutsideEmojiList);
-        }
-
-        function handleReactionButtonClick(e) {
-            e.preventDefault();
-            const emojiList = this.nextElementSibling;
-            if (emojiList) {
-                document.querySelectorAll('.emoji-list').forEach(list => {
-                    if (list !== emojiList) {
-                        list.classList.remove('show');
-                    }
-                });
-                emojiList.classList.toggle('show');
+            if (quantity > parseInt(quantityInput.getAttribute('max'))) {
+                alert('Số lượng vượt quá tồn kho!');
+                return;
             }
-        }
 
-        function handleEmojiOptionClick() {
-            const emoji = this.getAttribute('data-emoji');
-            const commentId = this.closest('.reaction-btn-wrapper').querySelector('.reaction-btn').getAttribute('data-comment-id');
-            console.log('Sending reaction:', { commentId, emoji });
-            fetch('{{ url_for("products.product_detail", product_id=product.id) }}', {
+            const url = `/cart/add/${productId}`;
+            fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: `emoji=${encodeURIComponent(emoji)}&comment_id=${commentId}`
+                body: new URLSearchParams({
+                    'quantity': quantity,
+                    'csrf_token': csrfToken
+                })
             })
             .then(response => {
-                console.log('Reaction response status:', response.status);
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
                 return response.json();
             })
             .then(data => {
-                console.log('Reaction response data:', data);
+                console.log('Response data:', data);
                 if (data.success) {
-                    const button = document.querySelector(`.reaction-btn[data-comment-id="${commentId}"]`);
-                    const reactionsDisplay = button.querySelector('.reactions-display');
-                    reactionsDisplay.innerHTML = '';
-                    const userEmojiSpan = document.createElement('span');
-                    userEmojiSpan.className = 'reaction-emoji user-reaction';
-                    userEmojiSpan.textContent = emoji;
-                    button.innerHTML = '';
-                    button.appendChild(userEmojiSpan);
-
-                    for (const [emoji, count] of Object.entries(data.reaction_summary)) {
-                        if (emoji !== data.reaction_emoji) {
-                            const emojiSpan = document.createElement('span');
-                            emojiSpan.className = 'reaction-emoji';
-                            emojiSpan.setAttribute('data-emoji', emoji);
-                            emojiSpan.innerHTML = `${emoji} <span class="reaction-count">${count}</span>`;
-                            reactionsDisplay.appendChild(emojiSpan);
-                        }
-                    }
-                    button.appendChild(reactionsDisplay);
-
-                    if (data.action === 'added') {
-                        button.classList.add('active');
-                    } else {
-                        button.classList.remove('active');
-                        button.innerHTML = '<i class="far fa-thumbs-up"></i> Thích';
-                        button.appendChild(reactionsDisplay);
-                    }
-
-                    const emojiList = button.nextElementSibling;
-                    if (emojiList) {
-                        emojiList.classList.remove('show');
-                    }
+                    alert('Sản phẩm đã được thêm vào giỏ hàng!');
                 } else {
-                    alert(data.message || 'Có lỗi khi gửi phản ứng!');
+                    alert(data.message || 'Không thể thêm sản phẩm vào giỏ hàng!');
                 }
             })
             .catch(error => {
-                console.error('Reaction error:', error);
-                alert('Có lỗi khi gửi phản ứng: ' + error.message);
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra: ' + error.message);
             });
+        });
+    }
+
+    // Xử lý nút Mua ngay
+    const buyNowButton = document.querySelector('.btn-buy-now');
+    if (buyNowButton) {
+        buyNowButton.addEventListener('click', function() {
+            const productId = parseInt(this.getAttribute('data-product-id'));
+            const quantityInput = document.querySelector('#quantity');
+            const quantity = parseInt(quantityInput.value);
+            const csrfToken = '{{ session["csrf_token"] }}';
+
+            if (quantity < 1 || isNaN(quantity)) {
+                alert('Vui lòng nhập số lượng hợp lệ!');
+                return;
+            }
+
+            if (quantity > parseInt(quantityInput.getAttribute('max'))) {
+                alert('Số lượng vượt quá tồn kho!');
+                return;
+            }
+
+            console.log('Buying now:', { productId, quantity });
+
+            fetch(`/cart/buy-now/${productId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new URLSearchParams({
+                    'quantity': quantity,
+                    'csrf_token': csrfToken
+                })
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    window.location.href = '{{ url_for("cart.checkout") }}';
+                } else {
+                    alert(data.message || 'Không thể thực hiện mua ngay!');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra: ' + error.message);
+            });
+        });
+    }
+
+    // Toggle reviews section
+    const reviewToggle = document.querySelector('.review-toggle');
+    const reviewsSection = document.querySelector('.reviews-section');
+    if (reviewToggle && reviewsSection) {
+        reviewToggle.addEventListener('click', function() {
+            reviewsSection.classList.toggle('visible');
+            if (reviewsSection.classList.contains('visible')) {
+                reviewsSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    }
+
+    // Rating input functionality
+    const ratingInputs = document.querySelectorAll('.rating-input');
+    ratingInputs.forEach(input => {
+        const stars = input.querySelectorAll('.star');
+        stars.forEach(star => {
+            star.addEventListener('click', function() {
+                const value = parseInt(this.getAttribute('data-value'));
+                stars.forEach(s => {
+                    const starValue = parseInt(s.getAttribute('data-value'));
+                    if (starValue <= value) {
+                        s.classList.remove('empty');
+                        s.classList.add('filled');
+                    } else {
+                        s.classList.remove('filled');
+                        s.classList.add('empty');
+                    }
+                });
+
+                const group = input.getAttribute('data-group');
+                let hiddenInput = input.querySelector(`input[name="${group === 'overall' ? 'rating' : 'criteria_' + group}"]`);
+                if (!hiddenInput) {
+                    hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = group === 'overall' ? 'rating' : 'criteria_' + group;
+                    input.appendChild(hiddenInput);
+                }
+                hiddenInput.value = value;
+            });
+
+            star.addEventListener('mouseover', function() {
+                const hoverValue = parseInt(this.getAttribute('data-value'));
+                stars.forEach(s => {
+                    const starValue = parseInt(s.getAttribute('data-value'));
+                    if (starValue <= hoverValue) {
+                        s.classList.add('hover');
+                    } else {
+                        s.classList.remove('hover');
+                    }
+                });
+            });
+
+            star.addEventListener('mouseout', function() {
+                stars.forEach(s => {
+                    s.classList.remove('hover');
+                });
+            });
+        });
+    });
+
+    // Emoji picker functionality (textarea)
+    function attachEmojiListeners() {
+        const emojiToggles = document.querySelectorAll('.emoji-toggle');
+        emojiToggles.forEach(toggle => {
+            toggle.removeEventListener('click', handleEmojiToggleClick);
+            toggle.addEventListener('click', handleEmojiToggleClick);
+        });
+
+        const emojis = document.querySelectorAll('.emoji');
+        emojis.forEach(emoji => {
+            emoji.removeEventListener('click', handleEmojiClick);
+            emoji.addEventListener('click', handleEmojiClick);
+        });
+
+        document.removeEventListener('click', handleClickOutsideEmoji);
+        document.addEventListener('click', handleClickOutsideEmoji);
+    }
+
+    function handleEmojiToggleClick() {
+        const container = this.nextElementSibling;
+        container.classList.toggle('show');
+    }
+
+    function handleEmojiClick() {
+        const emojiChar = this.getAttribute('data-emoji');
+        const container = this.closest('.emoji-picker');
+        const textarea = container.parentElement.querySelector('textarea');
+
+        if (textarea) {
+            const cursorPos = textarea.selectionStart;
+            const textBefore = textarea.value.substring(0, cursorPos);
+            const textAfter = textarea.value.substring(cursorPos);
+            textarea.value = textBefore + emojiChar + textAfter;
+            textarea.selectionStart = cursorPos + emojiChar.length;
+            textarea.selectionEnd = cursorPos + emojiChar.length;
+
+            const inputEvent = new Event('input', { bubbles: true });
+            textarea.dispatchEvent(inputEvent);
+
+            textarea.focus();
         }
 
-        function handleClickOutsideEmojiList(e) {
-            const emojiLists = document.querySelectorAll('.emoji-list');
-            emojiLists.forEach(list => {
-                const button = list.previousElementSibling;
-                if (!button.contains(e.target) && !list.contains(e.target)) {
+        container.classList.remove('show');
+    }
+
+    function handleClickOutsideEmoji(e) {
+        const emojiContainers = document.querySelectorAll('.emoji-container');
+        emojiContainers.forEach(container => {
+            const toggle = container.previousElementSibling;
+            if (!toggle.contains(e.target) && !container.contains(e.target)) {
+                container.classList.remove('show');
+            }
+        });
+    }
+
+    // Reaction emoji list functionality (click to show)
+    function attachReactionButtonListeners() {
+        const reactionButtons = document.querySelectorAll('.reaction-btn');
+        reactionButtons.forEach(button => {
+            button.removeEventListener('click', handleReactionButtonClick);
+            button.addEventListener('click', handleReactionButtonClick);
+        });
+
+        const emojiOptions = document.querySelectorAll('.emoji-option');
+        emojiOptions.forEach(option => {
+            option.removeEventListener('click', handleEmojiOptionClick);
+            option.addEventListener('click', handleEmojiOptionClick);
+        });
+
+        document.removeEventListener('click', handleClickOutsideEmojiList);
+        document.addEventListener('click', handleClickOutsideEmojiList);
+    }
+
+    function handleReactionButtonClick(e) {
+        e.preventDefault();
+        const emojiList = this.nextElementSibling;
+        if (emojiList) {
+            document.querySelectorAll('.emoji-list').forEach(list => {
+                if (list !== emojiList) {
                     list.classList.remove('show');
                 }
             });
+            emojiList.classList.toggle('show');
         }
+    }
 
-        // Handle reply buttons for top-level comments
-        function attachReplyButtonListeners() {
-            const replyButtons = document.querySelectorAll('.reply-btn');
-            replyButtons.forEach(button => {
-                button.removeEventListener('click', handleReplyClick);
-                button.addEventListener('click', handleReplyClick);
-            });
+    function handleEmojiOptionClick() {
+        const emoji = this.getAttribute('data-emoji');
+        const commentId = this.closest('.reaction-btn-wrapper').querySelector('.reaction-btn').getAttribute('data-comment-id');
+        console.log('Sending reaction:', { commentId, emoji });
+        fetch('{{ url_for("products.product_detail", product_id=product.id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `emoji=${encodeURIComponent(emoji)}&comment_id=${commentId}`
+        })
+        .then(response => {
+            console.log('Reaction response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Reaction response data:', data);
+            if (data.success) {
+                const button = document.querySelector(`.reaction-btn[data-comment-id="${commentId}"]`);
+                const reactionsDisplay = button.querySelector('.reactions-display');
+                reactionsDisplay.innerHTML = '';
+                const userEmojiSpan = document.createElement('span');
+                userEmojiSpan.className = 'reaction-emoji user-reaction';
+                userEmojiSpan.textContent = emoji;
+                button.innerHTML = '';
+                button.appendChild(userEmojiSpan);
 
-            // Nút trả lời thông qua bình luận cha
-            const replyViaParentButtons = document.querySelectorAll('.reply-via-parent-btn');
-            replyViaParentButtons.forEach(button => {
-                button.removeEventListener('click', handleReplyViaParentClick);
-                button.addEventListener('click', handleReplyViaParentClick);
-            });
-        }
-
-        function handleReplyClick() {
-            const commentId = this.getAttribute('data-comment-id');
-            const username = this.getAttribute('data-username');
-            const replyForm = document.getElementById(`reply-form-${commentId}`);
-            if (replyForm) {
-                document.querySelectorAll('.reply-form').forEach(form => {
-                    if (form !== replyForm) {
-                        form.style.display = 'none';
+                for (const [emoji, count] of Object.entries(data.reaction_summary)) {
+                    if (emoji !== data.reaction_emoji) {
+                        const emojiSpan = document.createElement('span');
+                        emojiSpan.className = 'reaction-emoji';
+                        emojiSpan.setAttribute('data-emoji', emoji);
+                        emojiSpan.innerHTML = `${emoji} <span class="reaction-count">${count}</span>`;
+                        reactionsDisplay.appendChild(emojiSpan);
                     }
-                });
-                replyForm.style.display = 'block';
-                const textarea = replyForm.querySelector('textarea');
-                if (textarea) {
-                    if (!textarea.value.trim().startsWith(`@${username}`)) {
-                        textarea.value = `@${username} `;
-                    }
-                    textarea.focus();
-                    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
                 }
-                replyForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                button.appendChild(reactionsDisplay);
+
+                if (data.action === 'added') {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                    button.innerHTML = '<i class="far fa-thumbs-up"></i> Thích';
+                    button.appendChild(reactionsDisplay);
+                }
+
+                const emojiList = button.nextElementSibling;
+                if (emojiList) {
+                    emojiList.classList.remove('show');
+                }
+            } else {
+                alert(data.message || 'Có lỗi khi gửi phản ứng!');
+            }
+        })
+        .catch(error => {
+            console.error('Reaction error:', error);
+            alert('Có lỗi khi gửi phản ứng: ' + error.message);
+        });
+    }
+
+    function handleClickOutsideEmojiList(e) {
+        const emojiLists = document.querySelectorAll('.emoji-list');
+        emojiLists.forEach(list => {
+            const button = list.previousElementSibling;
+            if (!button.contains(e.target) && !list.contains(e.target)) {
+                list.classList.remove('show');
+            }
+        });
+    }
+
+    // Handle reply buttons for top-level comments
+    function attachReplyButtonListeners() {
+        const replyButtons = document.querySelectorAll('.reply-btn');
+        replyButtons.forEach(button => {
+            button.removeEventListener('click', handleReplyClick);
+            button.addEventListener('click', handleReplyClick);
+        });
+
+        // Nút trả lời thông qua bình luận cha
+        const replyViaParentButtons = document.querySelectorAll('.reply-via-parent-btn');
+        replyViaParentButtons.forEach(button => {
+            button.removeEventListener('click', handleReplyViaParentClick);
+            button.addEventListener('click', handleReplyViaParentClick);
+        });
+    }
+
+    function handleReplyClick() {
+        const commentId = this.getAttribute('data-comment-id');
+        const username = this.getAttribute('data-username');
+        const replyForm = document.getElementById(`reply-form-${commentId}`);
+        if (replyForm) {
+            document.querySelectorAll('.reply-form').forEach(form => {
+                if (form !== replyForm) {
+                    form.style.display = 'none';
+                }
+            });
+            replyForm.style.display = 'block';
+            const textarea = replyForm.querySelector('textarea');
+            if (textarea) {
+                if (!textarea.value.trim().startsWith(`@${username}`)) {
+                    textarea.value = `@${username} `;
+                }
+                textarea.focus();
+                textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+            }
+            replyForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    function handleReplyViaParentClick() {
+        const parentId = this.getAttribute('data-parent-id');
+        const username = this.getAttribute('data-username');
+        const replyForm = document.getElementById(`reply-form-${parentId}`);
+        if (replyForm) {
+            document.querySelectorAll('.reply-form').forEach(form => {
+                if (form !== replyForm) {
+                    form.style.display = 'none';
+                }
+            });
+            replyForm.style.display = 'block';
+            const textarea = replyForm.querySelector('textarea');
+            if (textarea) {
+                if (!textarea.value.trim().startsWith(`@${username}`)) {
+                    textarea.value = `@${username} `;
+                }
+                textarea.focus();
+                textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+            }
+            replyForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    // Handle cancel reply buttons
+    function attachCancelReplyListeners() {
+        const cancelButtons = document.querySelectorAll('.cancel-reply');
+        cancelButtons.forEach(button => {
+            button.removeEventListener('click', handleCancelReplyClick);
+            button.addEventListener('click', handleCancelReplyClick);
+        });
+    }
+
+    function handleCancelReplyClick() {
+        const commentId = this.getAttribute('data-comment-id');
+        const replyForm = document.getElementById(`reply-form-${commentId}`);
+        if (replyForm) {
+            replyForm.style.display = 'none';
+            const textarea = replyForm.querySelector('textarea');
+            if (textarea) {
+                textarea.value = '';
             }
         }
+    }
 
-        function handleReplyViaParentClick() {
-            const parentId = this.getAttribute('data-parent-id');
-            const username = this.getAttribute('data-username');
-            const replyForm = document.getElementById(`reply-form-${parentId}`);
-            if (replyForm) {
-                document.querySelectorAll('.reply-form').forEach(form => {
-                    if (form !== replyForm) {
-                        form.style.display = 'none';
-                    }
-                });
-                replyForm.style.display = 'block';
-                const textarea = replyForm.querySelector('textarea');
-                if (textarea) {
-                    if (!textarea.value.trim().startsWith(`@${username}`)) {
-                        textarea.value = `@${username} `;
-                    }
-                    textarea.focus();
-                    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-                }
-                replyForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
-
-        // Handle cancel reply buttons
-        function attachCancelReplyListeners() {
-            const cancelButtons = document.querySelectorAll('.cancel-reply');
-            cancelButtons.forEach(button => {
-                button.removeEventListener('click', handleCancelReplyClick);
-                button.addEventListener('click', handleCancelReplyClick);
-            });
-        }
-
-        function handleCancelReplyClick() {
-            const commentId = this.getAttribute('data-comment-id');
-            const replyForm = document.getElementById(`reply-form-${commentId}`);
-            if (replyForm) {
-                replyForm.style.display = 'none';
-                const textarea = replyForm.querySelector('textarea');
-                if (textarea) {
-                    textarea.value = '';
-                }
-            }
-        }
-
-        // Handle review form submission (with DOM manipulation)
-        const reviewForm = document.getElementById('review-form');
-        if (reviewForm) {
-            reviewForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                console.log('Sending review:', Object.fromEntries(formData));
-                fetch(this.action, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => {
-                    console.log('Review response status:', response.status);
-                    if (!response.ok) {
-                        return response.text().then(text => {
-                            throw new Error(`HTTP ${response.status}: ${text}`);
-                        });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Review response data:', data);
-                    if (data.success) {
-                        const comment = data.comment;
-                        const reviewList = document.querySelector('.review-list');
-                        const noReviews = reviewList.querySelector('.no-reviews');
-
-                        if (noReviews) {
-                            noReviews.remove();
-                        }
-
-                        const commentHtml = `
-                            <div class="review-item" id="comment-${comment.id}">
-                                <div class="review-header">
-                                    <div class="review-user">
-                                        <span class="avatar-mini">${comment.user.first_name[0]}</span>
-                                        <span class="user-name">${comment.user.first_name}</span>
-                                        <span class="review-date">${comment.timestamp}</span>
-                                    </div>
-                                    <div class="review-rating">
-                                        ${Array(5).fill().map((_, i) => `<span class="star ${i < comment.score ? 'filled' : 'empty'}">★</span>`).join('')}
-                                    </div>
-                                </div>
-                                <p class="review-comment">${comment.content}</p>
-                                <div class="review-reactions">
-                                    <div class="reaction-buttons">
-                                        <div class="reaction-btn-wrapper">
-                                            <button class="reaction-btn" data-comment-id="${comment.id}">
-                                                <i class="far fa-thumbs-up"></i> Thích
-                                                <span class="reactions-display"></span>
-                                            </button>
-                                            <div class="emoji-list">
-                                                <span class="emoji-option" data-emoji="👍" data-index="0">👍</span>
-                                                <span class="emoji-option" data-emoji="❤️" data-index="1">❤️</span>
-                                                <span class="emoji-option" data-emoji="😊" data-index="2">😊</span>
-                                                <span class="emoji-option" data-emoji="👏" data-index="3">👏</span>
-                                                <span class="emoji-option" data-emoji="🎉" data-index="4">🎉</span>
-                                                <span class="emoji-option" data-emoji="🤔" data-index="5">🤔</span>
-                                                <span class="emoji-option" data-emoji="😍" data-index="6">😍</span>
-                                                <span class="emoji-option" data-emoji="🔥" data-index="7">🔥</span>
-                                                <span class="emoji-option" data-emoji="😎" data-index="8">😎</span>
-                                                <span class="emoji-option" data-emoji="😂" data-index="9">😂</span>
-                                                <span class="emoji-option" data-emoji="😢" data-index="10">😢</span>
-                                                <span class="emoji-option" data-emoji="😮" data-index="11">😮</span>
-                                                <span class="emoji-option" data-emoji="🙌" data-index="12">🙌</span>
-                                                <span class="emoji-option" data-emoji="✨" data-index="13">✨</span>
-                                            </div>
-                                        </div>
-                                        <button class="reply-btn" data-comment-id="${comment.id}" data-username="${comment.user.first_name}">
-                                            <i class="far fa-comment"></i> Trả lời
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="reply-form" id="reply-form-${comment.id}" style="display:none;">
-                                    <form class="comment-form" data-comment-id="${comment.id}">
-                                        <input type="hidden" name="parent_id" value="${comment.id}">
-                                        <div class="form-group">
-                                            <div class="textarea-container">
-                                                <textarea class="form-control reply-text" name="content" placeholder="Write your response..." required></textarea>
-                                            <div class="emoji-picker">
-                                                <span class="emoji-toggle"><i class="far fa-smile"></i></span>
-                                                <div class="emoji-container">
-                                                    <span class="emoji" data-emoji="👍" data-index="0">👍</span>
-                                                    <span class="emoji" data-emoji="❤️" data-index="1">❤️</span>
-                                                    <span class="emoji" data-emoji="😊" data-index="2">😊</span>
-                                                    <span class="emoji" data-emoji="👏" data-index="3">👏</span>
-                                                    <span class="emoji" data-emoji="🎉" data-index="4">🎉</span>
-                                                    <span class="emoji" data-emoji="🤔" data-index="5">🤔</span>
-                                                    <span class="emoji" data-emoji="😍" data-index="6">😍</span>
-                                                    <span class="emoji" data-emoji="🔥" data-index="7">🔥</span>
-                                                    <span class="emoji" data-emoji="😎" data-index="8">😎</span>
-                                                    <span class="emoji" data-emoji="😂" data-index="9">😂</span>
-                                                    <span class="emoji" data-emoji="😢" data-index="10">😢</span>
-                                                    <span class="emoji" data-emoji="😮" data-index="11">😮</span>
-                                                    <span class="emoji" data-emoji="🙌" data-index="12">🙌</span>
-                                                    <span class="emoji" data-emoji="✨" data-index="13">✨</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <button type="submit" class="btn btn-primary btn-sm">Submit</button>
-                                        <button type="button" class="btn btn-secondary btn-sm cancel-reply" data-comment-id="${comment.id}">Cancel</button>
-                                    </form>
-                                </div>
-                                <div class="comments-section-inner" id="comments-${comment.id}"></div>
-                            </div>
-                        `;
-
-                        reviewList.insertAdjacentHTML('afterbegin', commentHtml);
-
-                        this.reset();
-                        const stars = this.querySelectorAll('.rating-input .star');
-                        stars.forEach(star => {
-                            star.classList.remove('filled');
-                            star.classList.add('empty');
-                        });
-                        const hiddenInputs = this.querySelectorAll('input[type="hidden"]');
-                        hiddenInputs.forEach(input => input.value = '');
-
-                        attachReplyButtonListeners();
-                        attachReactionButtonListeners();
-                        attachEmojiListeners();
-                        attachCancelReplyListeners();
-                        attachCommentFormListeners();
-                    } else {
-                        alert(data.message || 'Có lỗi khi gửi đánh giá!');
-                    }
-                })
-                .catch(error => {
-                    console.error('Review error:', error);
-                    alert('Có lỗi khi gửi đánh giá: ' + error.message);
-                });
-            });
-        }
-
-        // Handle comment form submission (reply form with DOM manipulation)
-        function attachCommentFormListeners() {
-            const commentForms = document.querySelectorAll('.comment-form');
-            commentForms.forEach(form => {
-                form.removeEventListener('submit', handleCommentFormSubmit);
-                form.addEventListener('submit', handleCommentFormSubmit);
-            });
-        }
-
-        function handleCommentFormSubmit(e) {
+    // Handle review form submission (with DOM manipulation)
+    const reviewForm = document.getElementById('review-form');
+    if (reviewForm) {
+        reviewForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
-            const commentId = this.getAttribute('data-comment-id');
-            console.log('Sending comment:', Object.fromEntries(formData));
-            fetch('{{ url_for("products.product_detail", product_id=product.id) }}', {
+            console.log('Sending review:', Object.fromEntries(formData));
+            fetch(this.action, {
                 method: 'POST',
                 body: formData
             })
             .then(response => {
-                console.log('Comment response status:', response.status);
+                console.log('Review response status:', response.status);
                 if (!response.ok) {
                     return response.text().then(text => {
                         throw new Error(`HTTP ${response.status}: ${text}`);
@@ -941,70 +833,102 @@
                 return response.json();
             })
             .then(data => {
-                console.log('Comment response data:', data);
+                console.log('Review response data:', data);
                 if (data.success) {
                     const comment = data.comment;
-                    let parentContainer = document.getElementById(`comments-${commentId}`);
-                    const replyForm = document.getElementById(`reply-form-${commentId}`);
+                    const reviewList = document.querySelector('.review-list');
+                    const noReviews = reviewList.querySelector('.no-reviews');
 
-                    // Nếu parentContainer không tồn tại, tạo mới và thêm vào DOM
-                    if (!parentContainer) {
-                        const parentComment = document.getElementById(`comment-${commentId}`);
-                        if (parentComment) {
-                            const newContainer = document.createElement('div');
-                            newContainer.className = 'comments-section-inner';
-                            newContainer.id = `comments-${commentId}`;
-                            parentComment.appendChild(newContainer);
-                            parentContainer = newContainer;
-                        } else {
-                            console.error(`Parent comment with ID comment-${commentId} not found`);
-                            alert('Không tìm thấy bình luận cha để thêm trả lời!');
-                            return;
-                        }
+                    if (noReviews) {
+                        noReviews.remove();
                     }
 
-                    const replyHtml = `
-                        <div class="comment-item" data-comment-id="${comment.id}">
-                            <div class="comment-header">
-                                <span class="avatar-mini">${comment.user.first_name[0]}</span>
-                                <span class="user-name">${comment.user.first_name}</span>
-                                <span class="comment-date">${comment.timestamp}</span>
-                            </div>
-                            <p class="comment-text">${comment.content}</p>
-                            <div class="comment-reactions">
-                                <div class="reaction-btn-wrapper">
-                                    <button class="reaction-btn" data-comment-id="${comment.id}">
-                                        <i class="far fa-thumbs-up"></i>
-                                        <span class="reactions-display"></span>
-                                    </button>
-                                    <div class="emoji-list">
-                                        <span class="emoji-option" data-emoji="👍" data-index="0">👍</span>
-                                        <span class="emoji-option" data-emoji="❤️" data-index="1">❤️</span>
-                                        <span class="emoji-option" data-emoji="😊" data-index="2">😊</span>
-                                        <span class="emoji-option" data-emoji="👏" data-index="3">👏</span>
-                                        <span class="emoji-option" data-emoji="🎉" data-index="4">🎉</span>
-                                        <span class="emoji-option" data-emoji="🤔" data-index="5">🤔</span>
-                                        <span class="emoji-option" data-emoji="😍" data-index="6">😍</span>
-                                        <span class="emoji-option" data-emoji="🔥" data-index="7">🔥</span>
-                                        <span class="emoji-option" data-emoji="😎" data-index="8">😎</span>
-                                        <span class="emoji-option" data-emoji="😂" data-index="9">😂</span>
-                                        <span class="emoji-option" data-emoji="😢" data-index="10">😢</span>
-                                        <span class="emoji-option" data-emoji="😮" data-index="11">😮</span>
-                                        <span class="emoji-option" data-emoji="🙌" data-index="12">🙌</span>
-                                        <span class="emoji-option" data-emoji="✨" data-index="13">✨</span>
-                                    </div>
+                    const commentHtml = `
+                        <div class="review-item" id="comment-${comment.id}">
+                            <div class="review-header">
+                                <div class="review-user">
+                                    <span class="avatar-mini">${comment.user.first_name[0]}</span>
+                                    <span class="user-name">${comment.user.first_name}</span>
+                                    <span class="review-date">${comment.timestamp}</span>
                                 </div>
-                                <button class="reply-via-parent-btn" data-parent-id="${commentId}" data-username="${comment.user.first_name}">
-                                    <i class="far fa-comment"></i> Trả lời
-                                </button>
+                                <div class="review-rating">
+                                    ${Array(5).fill().map((_, i) => `<span class="star ${i < comment.score ? 'filled' : 'empty'}">★</span>`).join('')}
+                                </div>
                             </div>
+                            <p class="review-comment">${comment.content}</p>
+                            <div class="review-reactions">
+                                <div class="reaction-buttons">
+                                    <div class="reaction-btn-wrapper">
+                                        <button class="reaction-btn" data-comment-id="${comment.id}">
+                                            <i class="far fa-thumbs-up"></i> Thích
+                                            <span class="reactions-display"></span>
+                                        </button>
+                                        <div class="emoji-list">
+                                            <span class="emoji-option" data-emoji="👍" data-index="0">👍</span>
+                                            <span class="emoji-option" data-emoji="❤️" data-index="1">❤️</span>
+                                            <span class="emoji-option" data-emoji="😊" data-index="2">😊</span>
+                                            <span class="emoji-option" data-emoji="👏" data-index="3">👏</span>
+                                            <span class="emoji-option" data-emoji="🎉" data-index="4">🎉</span>
+                                            <span class="emoji-option" data-emoji="🤔" data-index="5">🤔</span>
+                                            <span class="emoji-option" data-emoji="😍" data-index="6">😍</span>
+                                            <span class="emoji-option" data-emoji="🔥" data-index="7">🔥</span>
+                                            <span class="emoji-option" data-emoji="😎" data-index="8">😎</span>
+                                            <span class="emoji-option" data-emoji="😂" data-index="9">😂</span>
+                                            <span class="emoji-option" data-emoji="😢" data-index="10">😢</span>
+                                            <span class="emoji-option" data-emoji="😮" data-index="11">😮</span>
+                                            <span class="emoji-option" data-emoji="🙌" data-index="12">🙌</span>
+                                            <span class="emoji-option" data-emoji="✨" data-index="13">✨</span>
+                                        </div>
+                                    </div>
+                                    <button class="reply-btn" data-comment-id="${comment.id}" data-username="${comment.user.first_name}">
+                                        <i class="far fa-comment"></i> Trả lời
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="reply-form" id="reply-form-${comment.id}" style="display:none;">
+                                <form class="comment-form" data-comment-id="${comment.id}">
+                                    <input type="hidden" name="parent_id" value="${comment.id}">
+                                    <div class="form-group">
+                                        <div class="textarea-container">
+                                            <textarea class="form-control reply-text" name="content" placeholder="Write your response..." required></textarea>
+                                        <div class="emoji-picker">
+                                            <span class="emoji-toggle"><i class="far fa-smile"></i></span>
+                                            <div class="emoji-container">
+                                                <span class="emoji" data-emoji="👍" data-index="0">👍</span>
+                                                <span class="emoji" data-emoji="❤️" data-index="1">❤️</span>
+                                                <span class="emoji" data-emoji="😊" data-index="2">😊</span>
+                                                <span class="emoji" data-emoji="👏" data-index="3">👏</span>
+                                                <span class="emoji" data-emoji="🎉" data-index="4">🎉</span>
+                                                <span class="emoji" data-emoji="🤔" data-index="5">🤔</span>
+                                                <span class="emoji" data-emoji="😍" data-index="6">😍</span>
+                                                <span class="emoji" data-emoji="🔥" data-index="7">🔥</span>
+                                                <span class="emoji" data-emoji="😎" data-index="8">😎</span>
+                                                <span class="emoji" data-emoji="😂" data-index="9">😂</span>
+                                                <span class="emoji" data-emoji="😢" data-index="10">😢</span>
+                                                <span class="emoji" data-emoji="😮" data-index="11">😮</span>
+                                                <span class="emoji" data-emoji="🙌" data-index="12">🙌</span>
+                                                <span class="emoji" data-emoji="✨" data-index="13">✨</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+                                    <button type="button" class="btn btn-secondary btn-sm cancel-reply" data-comment-id="${comment.id}">Cancel</button>
+                                </form>
+                            </div>
+                            <div class="comments-section-inner" id="comments-${comment.id}"></div>
                         </div>
                     `;
 
-                    parentContainer.insertAdjacentHTML('beforeend', replyHtml);
+                    reviewList.insertAdjacentHTML('afterbegin', commentHtml);
 
-                    this.querySelector('textarea').value = '';
-                    this.style.display = 'none';
+                    this.reset();
+                    const stars = this.querySelectorAll('.rating-input .star');
+                    stars.forEach(star => {
+                        star.classList.remove('filled');
+                        star.classList.add('empty');
+                    });
+                    const hiddenInputs = this.querySelectorAll('input[type="hidden"]');
+                    hiddenInputs.forEach(input => input.value = '');
 
                     attachReplyButtonListeners();
                     attachReactionButtonListeners();
@@ -1012,21 +936,130 @@
                     attachCancelReplyListeners();
                     attachCommentFormListeners();
                 } else {
-                    alert(data.message || 'Có lỗi khi gửi bình luận!');
+                    alert(data.message || 'Có lỗi khi gửi đánh giá!');
                 }
             })
             .catch(error => {
-                console.error('Comment error:', error);
-                alert('Có lỗi khi gửi bình luận: ' + error.message);
+                console.error('Review error:', error);
+                alert('Có lỗi khi gửi đánh giá: ' + error.message);
             });
-        }
+        });
+    }
 
-        // Gắn sự kiện cho các form bình luận ban đầu
-        attachCommentFormListeners();
-        attachReactionButtonListeners();
-        attachEmojiListeners();
-        attachReplyButtonListeners();
-        attachCancelReplyListeners();
-    });
+    // Handle comment form submission (reply form with DOM manipulation)
+    function attachCommentFormListeners() {
+        const commentForms = document.querySelectorAll('.comment-form');
+        commentForms.forEach(form => {
+            form.removeEventListener('submit', handleCommentFormSubmit);
+            form.addEventListener('submit', handleCommentFormSubmit);
+        });
+    }
+
+    function handleCommentFormSubmit(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const commentId = this.getAttribute('data-comment-id');
+        console.log('Sending comment:', Object.fromEntries(formData));
+        fetch('{{ url_for("products.product_detail", product_id=product.id) }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            console.log('Comment response status:', response.status);
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`HTTP ${response.status}: ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Comment response data:', data);
+            if (data.success) {
+                const comment = data.comment;
+                let parentContainer = document.getElementById(`comments-${commentId}`);
+                const replyForm = document.getElementById(`reply-form-${commentId}`);
+
+                // Nếu parentContainer không tồn tại, tạo mới và thêm vào DOM
+                if (!parentContainer) {
+                    const parentComment = document.getElementById(`comment-${commentId}`);
+                    if (parentComment) {
+                        const newContainer = document.createElement('div');
+                        newContainer.className = 'comments-section-inner';
+                        newContainer.id = `comments-${commentId}`;
+                        parentComment.appendChild(newContainer);
+                        parentContainer = newContainer;
+                    } else {
+                        console.error(`Parent comment with ID comment-${commentId} not found`);
+                        alert('Không tìm thấy bình luận cha để thêm trả lời!');
+                        return;
+                    }
+                }
+
+                const replyHtml = `
+                    <div class="comment-item" data-comment-id="${comment.id}">
+                        <div class="comment-header">
+                            <span class="avatar-mini">${comment.user.first_name[0]}</span>
+                            <span class="user-name">${comment.user.first_name}</span>
+                            <span class="comment-date">${comment.timestamp}</span>
+                        </div>
+                        <p class="comment-text">${comment.content}</p>
+                        <div class="comment-reactions">
+                            <div class="reaction-btn-wrapper">
+                                <button class="reaction-btn" data-comment-id="${comment.id}">
+                                    <i class="far fa-thumbs-up"></i>
+                                    <span class="reactions-display"></span>
+                                </button>
+                                <div class="emoji-list">
+                                    <span class="emoji-option" data-emoji="👍" data-index="0">👍</span>
+                                    <span class="emoji-option" data-emoji="❤️" data-index="1">❤️</span>
+                                    <span class="emoji-option" data-emoji="😊" data-index="2">😊</span>
+                                    <span class="emoji-option" data-emoji="👏" data-index="3">👏</span>
+                                    <span class="emoji-option" data-emoji="🎉" data-index="4">🎉</span>
+                                    <span class="emoji-option" data-emoji="🤔" data-index="5">🤔</span>
+                                    <span class="emoji-option" data-emoji="😍" data-index="6">😍</span>
+                                    <span class="emoji-option" data-emoji="🔥" data-index="7">🔥</span>
+                                    <span class="emoji-option" data-emoji="😎" data-index="8">😎</span>
+                                    <span class="emoji-option" data-emoji="😂" data-index="9">😂</span>
+                                    <span class="emoji-option" data-emoji="😢" data-index="10">😢</span>
+                                    <span class="emoji-option" data-emoji="😮" data-index="11">😮</span>
+                                    <span class="emoji-option" data-emoji="🙌" data-index="12">🙌</span>
+                                    <span class="emoji-option" data-emoji="✨" data-index="13">✨</span>
+                                </div>
+                            </div>
+                            <button class="reply-via-parent-btn" data-parent-id="${commentId}" data-username="${comment.user.first_name}">
+                                <i class="far fa-comment"></i> Trả lời
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                parentContainer.insertAdjacentHTML('beforeend', replyHtml);
+
+                this.querySelector('textarea').value = '';
+                this.style.display = 'none';
+
+                attachReplyButtonListeners();
+                attachReactionButtonListeners();
+                attachEmojiListeners();
+                attachCancelReplyListeners();
+                attachCommentFormListeners();
+            } else {
+                alert(data.message || 'Có lỗi khi gửi bình luận!');
+            }
+        })
+        .catch(error => {
+            console.error('Comment error:', error);
+            alert('Có lỗi khi gửi bình luận: ' + error.message);
+        });
+    }
+
+    // Gắn sự kiện cho các form bình luận ban đầu
+    attachCommentFormListeners();
+    attachReactionButtonListeners();
+    attachEmojiListeners();
+    attachReplyButtonListeners();
+    attachCancelReplyListeners();
+});
 </script>
 {% endblock %}

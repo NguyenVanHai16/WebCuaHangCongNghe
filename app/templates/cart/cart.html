@@ -132,6 +132,7 @@ function updateTotalItems() {
     const summary = document.querySelector('.cart-summary');
     const emptyMessage = document.querySelector('.empty-cart');
     const checkoutBtn = document.getElementById('checkout-btn');
+    console.log('Cart items exist:', !!document.querySelector('.cart-table tbody tr'));
     if (!document.querySelector('.cart-table tbody tr')) {
         table.style.display = 'none';
         summary.style.display = 'none';
@@ -141,7 +142,7 @@ function updateTotalItems() {
         table.style.display = 'table';
         summary.style.display = 'flex';
         emptyMessage.style.display = 'none';
-        checkoutBtn.disabled = checkboxes.length === 0;
+        checkoutBtn.disabled = false;
     }
 }
 
@@ -152,8 +153,14 @@ function updateQuantity(input) {
         return;
     }
     const formData = new FormData(form);
+    const itemId = form.action.split('/').pop();
+
     fetch(form.action, {
         method: 'POST',
+        headers: {
+            'X-CSRF-Token': '{{ session["csrf_token"] }}',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
         body: formData
     })
     .then(response => {
@@ -164,13 +171,14 @@ function updateQuantity(input) {
     })
     .then(data => {
         if (data.success) {
+            updateSubtotal(input);
             updateTotalItems();
             console.log('Quantity updated successfully:', data);
         } else {
             console.error('Failed to update quantity:', data.message);
             input.value = input.defaultValue;
             updateSubtotal(input);
-            alert(data.message);
+            alert(data.message || 'Không thể cập nhật số lượng!');
         }
     })
     .catch(error => {
@@ -222,42 +230,97 @@ document.querySelectorAll('.quantity-input').forEach(input => {
 
 // Cập nhật tổng số lượng và tổng tiền khi trang tải
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('Page loaded, initializing cart');
+    const form = document.getElementById('cart-form');
+    if (!form) {
+        console.error('Cart form not found in DOM');
+        return;
+    }
     document.querySelectorAll('.quantity-input').forEach(input => updateSubtotal(input));
     updateTotalItems();
-    // Đảm bảo nút "Thanh toán" được bật nếu có sản phẩm được chọn
     const selectAll = document.getElementById('select-all');
     const checkboxes = document.querySelectorAll('.select-item');
     if (checkboxes.length > 0) {
+        console.log('Selecting all items:', checkboxes.length);
         selectAll.checked = true;
         checkboxes.forEach(checkbox => checkbox.checked = true);
         updateTotalItems();
     }
 });
 
-// Xử lý submit form để gửi selected_items
+// Xử lý submit form để gửi chỉ các items được checked
 document.getElementById('cart-form').addEventListener('submit', function(event) {
-    console.log('Form submitted');
-    console.log('Selected items:', document.querySelectorAll('.select-item:checked').length);
+    event.preventDefault();
+    console.log('Form submit triggered');
+    const form = this;
+    if (!form) {
+        console.error('Form element not found');
+        return;
+    }
+
+    const checkedItems = document.querySelectorAll('.select-item:checked');
+    console.log('Checked items:', checkedItems.length);
 
     // Xóa các input ẩn cũ
-    const existingHiddenInputs = document.querySelectorAll('input[name="selected_items"][type="hidden"]');
+    const existingHiddenInputs = document.querySelectorAll('input[name="selected_items[]"][type="hidden"]');
     existingHiddenInputs.forEach(input => input.remove());
 
-    // Thêm các input ẩn cho các checkbox đã chọn
-    const checkedItems = document.querySelectorAll('.select-item:checked');
-    checkedItems.forEach(item => {
+    // Thêm các item được chọn
+    checkedItems.forEach((item, index) => {
+        const itemId = item.value;
+        console.log(`Adding checked item ${index + 1} with ID: ${itemId}`);
         const hiddenInput = document.createElement('input');
         hiddenInput.type = 'hidden';
-        hiddenInput.name = 'selected_items';
-        hiddenInput.value = item.value;
-        document.getElementById('cart-form').appendChild(hiddenInput);
+        hiddenInput.name = 'selected_items[]';
+        hiddenInput.value = itemId;
+        form.appendChild(hiddenInput);
     });
 
-    // Ngăn submit nếu không có mục nào được chọn
     if (checkedItems.length === 0) {
-        event.preventDefault();
         alert('Vui lòng chọn ít nhất một sản phẩm để thanh toán.');
+        return;
     }
+
+    const formData = new FormData(form);
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': '{{ session["csrf_token"] }}'
+        },
+        body: formData
+    })
+    .then(response => {
+        console.log('Server response status:', response.status);
+        if (!response.ok) {
+            return response.text().then(text => {
+                throw new Error(`HTTP ${response.status}: ${text}`);
+            });
+        }
+        // Kiểm tra Content-Type để xác định JSON hay HTML
+        const contentType = response.headers.get('Content-Type');
+        console.log('Content-Type:', contentType);
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            return response.text().then(text => {
+                console.log('Non-JSON response:', text.substring(0, 100));
+                throw new Error('Server trả về HTML thay vì JSON');
+            });
+        }
+    })
+    .then(data => {
+        console.log('Server response:', data);
+        if (data.success) {
+            window.location.href = '{{ url_for("cart.checkout") }}';
+        } else {
+            alert(data.message || 'Lỗi khi thanh toán!');
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('Có lỗi xảy ra khi gửi yêu cầu: ' + error.message);
+    });
 });
 </script>
 {% endblock %}

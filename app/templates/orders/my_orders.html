@@ -1,44 +1,76 @@
 {% extends "layout.html" %}
 
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/orders.css') }}">
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusButtons = document.querySelectorAll('.status-btn');
+        const orderRows = document.querySelectorAll('.order-row');
+
+        statusButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const selectedStatus = this.getAttribute('data-status');
+
+                statusButtons.forEach(btn => btn.classList.remove('btn-primary'));
+                this.classList.add('btn-primary');
+
+                orderRows.forEach(row => {
+                    const rowStatus = row.getAttribute('data-status');
+                    if (selectedStatus === 'all' || rowStatus === selectedStatus) {
+                        row.classList.add('active');
+                    } else {
+                        row.classList.remove('active');
+                    }
+                });
+            });
+        });
+
+        // Mặc định chọn "Đơn hàng"
+        document.querySelector('[data-status="pending"]').click();
+    });
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
     <h2 class="mb-4">Đơn hàng của tôi</h2>
+    <div class="status-buttons">
+        <button class="btn btn-outline-primary status-btn" data-status="pending">Đơn hàng</button>
+        <button class="btn btn-outline-primary status-btn" data-status="confirmed">Xác nhận</button>
+        <button class="btn btn-outline-primary status-btn" data-status="shipping">Giao hàng</button>
+        <button class="btn btn-outline-primary status-btn" data-status="delivered">Đã giao</button>
+        <button class="btn btn-outline-primary status-btn" data-status="cancelled">Đã hủy</button>
+    </div>
     {% if orders %}
-        {% for order in orders %}
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between">
-                <span>Mã đơn: #{{ order.id }}</span>
-                <span>Ngày đặt: {{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
-            </div>
-            <div class="card-body">
-                <div class="status-timeline mb-3">
-                    {% set statuses = ['pending', 'confirmed', 'pickup_pending', 'shipping', 'delivered'] %}
-                    <div class="d-flex justify-content-between">
-                        {% for status in statuses %}
-                            <div class="status-point {{ 'active' if order.status == status }} 
-                                                    {{ 'completed' if statuses.index(status) < statuses.index(order.status) }}">
-                                <span>{{ get_order_status_label(status) }}</span>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                
-                <div class="order-details">
-                    {% for item in order.items %}
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>{{ item.product.name }} x {{ item.quantity }}</span>
-                        <span>{{ item.price|format_number }}đ</span>
-                    </div>
-                    {% endfor %}
-                    <hr>
-                    <div class="d-flex justify-content-between">
-                        <strong>Tổng cộng:</strong>
-                        <strong>{{ order.total|format_number }}đ</strong>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Mã đơn hàng</th>
+                    <th>Khách hàng</th>
+                    <th>Ngày đặt</th>
+                    <th>Tổng tiền</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr class="order-row" data-status="{{ order.status }}">
+                    <td>#{{ order.id }}</td>
+                    <td>{{ order.user.username if order.user else 'N/A' }}</td>
+                    <td>{{ order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else 'N/A' }}</td>
+                    <td>{{ order.total_amount|format_number }}đ</td>
+                    <td>
+                        <span class="status-label {{ order.status }}">{{ get_order_status_label(order.status) }}</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     {% else %}
         <div class="alert alert-info">
             Bạn chưa có đơn hàng nào.

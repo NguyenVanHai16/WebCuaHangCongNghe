@@ -1,44 +1,250 @@
-.order-status-timeline {
-    display: flex;
-    align-items: center;
-    margin: 20px 0;
+/* Root variables for consistent theming */
+:root {
+    --primary-color: #1E40AF; /* Xanh lam đậm */
+    --secondary-color: #60A5FA; /* Xanh lam sáng */
+    --accent-color: #F472B6; /* Hồng phấn */
+    --dark-color: #1F2937; /* Xám đậm */
+    --light-color: #F9FAFB; /* Trắng nhẹ */
+    --gray-color: #D1D5DB; /* Xám nhạt */
+    --success-color: #34D399; /* Xanh lá tươi */
+    --danger-color: #F87171; /* Đỏ nhạt */
+    --warning-color: #FBBF24; /* Vàng ấm */
+    --info-color: #2DD4BF; /* Xanh ngọc */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
+    --shadow-glow: 0 0 12px rgba(96, 165, 250, 0.3);
+    --card-border-radius: 12px;
 }
 
-.status-step {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1;
+/* Reset và styles cơ bản */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-.status-dot {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background-color: #e0e0e0;
+body {
+    font-family: 'Inter', 'Roboto', sans-serif;
+    line-height: 1.6;
+    color: var(--dark-color);
+    background: linear-gradient(135deg, var(--light-color) 0%, #E0F2FE 100%);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+    text-decoration: none;
+    color: var(--primary-color);
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+/* Container Styling */
+.container {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Status Buttons */
+.status-buttons {
+    margin-bottom: 1rem;
+}
+
+.status-buttons .btn {
+    margin-right: 5px;
     margin-bottom: 5px;
+    color: var(--dark-color);
+    border: 1px solid var(--gray-color);
+    background-color: var(--light-color);
+    transition: all 0.3s ease;
+    padding: 8px 16px;
+    border-radius: var(--card-border-radius);
+    font-size: 0.9rem;
+    font-weight: 500;
 }
 
-.status-line {
-    flex: 1;
-    height: 3px;
-    background-color: #e0e0e0;
+.status-buttons .btn:hover {
+    background-color: var(--gray-color);
+    color: var(--dark-color);
 }
 
-.status-step.active .status-dot {
-    background-color: #007bff;
+.status-buttons .btn.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+    color: var(--light-color);
+    border-color: var(--primary-color);
 }
 
-.status-step.completed .status-dot,
-.status-line.completed {
-    background-color: #28a745;
+.status-buttons .btn.btn-primary:hover {
+    background: var(--secondary-color);
+    border-color: var(--secondary-color);
 }
 
+/* Table Styling */
+.table-responsive {
+    margin-top: 1rem;
+}
+
+.table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table thead th {
+    background-color: var(--gray-color);
+    color: var(--dark-color);
+    font-weight: 600;
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 2px solid var(--gray-color);
+}
+
+.table tbody tr {
+    transition: background-color 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background-color: var(--light-color);
+}
+
+.table tbody td {
+    padding: 10px 15px;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--gray-color);
+}
+
+/* Status Label */
 .status-label {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    color: white;
     font-size: 0.8rem;
-    text-align: center;
 }
 
-.order-card {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+.status-label.pending { background-color: var(--warning-color); }
+.status-label.confirmed { background-color: var(--info-color); }
+.status-label.shipping { background-color: var(--primary-color); }
+.status-label.delivered { background-color: var(--success-color); }
+.status-label.cancelled { background-color: var(--danger-color); }
+
+/* Buttons */
+.btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: var(--card-border-radius);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: center;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.6s ease;
+}
+
+.btn:hover::after {
+    width: 200%;
+    height: 200%;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
+}
+
+.btn:active {
+    transform: scale(0.95);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+    color: var(--light-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background: var(--secondary-color);
+}
+
+.btn-outline, .btn-secondary {
+    background: transparent;
+    color: var(--dark-color);
+    border: 1px solid var(--gray-color);
+}
+
+.btn-outline:hover, .btn-secondary:hover {
+    background: var(--light-color);
+    color: var(--primary-color);
+}
+
+.btn-danger {
+    background: var(--danger-color);
+    color: var(--light-color);
+    border-color: var(--danger-color);
+}
+
+.btn-danger:hover {
+    background: #EF4444;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+.order-row {
+    display: none;
+}
+
+.order-row.active {
+    display: table-row;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    .status-buttons .btn {
+        font-size: 0.9rem;
+        padding: 6px 12px;
+    }
+
+    .table thead th,
+    .table tbody td {
+        font-size: 0.85rem;
+        padding: 8px 10px;
+    }
+
+    .btn {
+        font-size: 0.85rem;
+        padding: 6px 12px;
+    }
+}
+
+@media (max-width: 576px) {
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+
+    .table thead th,
+    .table tbody td {
+        padding: 6px 8px;
+    }
 }

@@ -1,7 +1,9 @@
 from app import create_app, db
 from datetime import datetime
-from flask import current_app, g, render_template, url_for, redirect
+import pytz
+from flask import current_app, g, render_template, url_for, redirect, session
 from app.utils import get_current_time
+import secrets
 
 app = create_app()
 
@@ -15,9 +17,24 @@ def allowed_file(filename):
 
 # Định nghĩa bộ lọc format_number
 def format_number(value):
-    return "{:,.0f}".format(value)
+    if value is None or value == '':
+        return "0"
+    try:
+        return "{:,.0f}".format(float(value))
+    except (ValueError, TypeError):
+        return str(value)
 
 app.jinja_env.filters['format_number'] = format_number
+
+# Định nghĩa bộ lọc format_datetime
+def format_datetime(value):
+    if value is None:
+        return ""
+    vietnam_tz = pytz.timezone('Asia/Ho_Chi_Minh')
+    local_time = value.astimezone(vietnam_tz)
+    return local_time.strftime('%Y-%m-%d %H:%M:%S')
+
+app.jinja_env.filters['format_datetime'] = format_datetime
 
 # Định nghĩa hàm get_order_status_label
 def get_order_status_label(status):
@@ -48,6 +65,8 @@ def inject_now():
 @app.before_request
 def before_request():
     g.request_start_time = get_current_time()
+    if 'csrf_token' not in session:
+        session['csrf_token'] = secrets.token_hex(16)
 
 @app.after_request
 def after_request(response):
@@ -72,10 +91,10 @@ def checkout():
     cart_items = get_cart_items()
     if not cart_items:
         return redirect(url_for('cart'))
-    
+
     # Xử lý logic thanh toán ở đây
     # ...
-    
+
     return redirect(url_for('orders.my_orders'))
 
 @app.route('/products')
@@ -87,4 +106,4 @@ def index():
     pass
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5002, debug=True)
